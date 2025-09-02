@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getLogs } from "@/environment/logging"
 
 // Mock log data generator for development
 function generateMockLogs(count = 50) {
@@ -103,53 +104,36 @@ function generateMockLogs(count = 50) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const level = searchParams.get("level")
-    const component = searchParams.get("component")
-    const search = searchParams.get("search")
-    const limit = Number.parseInt(searchParams.get("limit") || "50")
 
-    // Generate mock logs (in production, this would query your SQL database)
-    let logs = generateMockLogs(limit)
-
-    // Apply filters
-    if (level && level !== "all") {
-      logs = logs.filter((log) => log.level === level)
+    const options = {
+      level: searchParams.get("level") as any,
+      component: searchParams.get("component") || undefined,
+      search: searchParams.get("search") || undefined,
+      limit: Number.parseInt(searchParams.get("limit") || "100"),
+      offset: Number.parseInt(searchParams.get("offset") || "0"),
+      startDate: searchParams.get("startDate") || undefined,
+      endDate: searchParams.get("endDate") || undefined,
     }
 
-    if (component && component !== "all") {
-      logs = logs.filter((log) => log.component === component)
-    }
-
-    if (search) {
-      const searchLower = search.toLowerCase()
-      logs = logs.filter(
-        (log) =>
-          log.message.toLowerCase().includes(searchLower) ||
-          log.details.toLowerCase().includes(searchLower) ||
-          log.userId.toLowerCase().includes(searchLower) ||
-          log.sessionId.toLowerCase().includes(searchLower) ||
-          log.endpoint.toLowerCase().includes(searchLower) ||
-          log.requestId.toLowerCase().includes(searchLower),
-      )
-    }
-
-    // Calculate statistics
-    const stats = {
-      total: logs.length,
-      info: logs.filter((log) => log.level === "info").length,
-      warning: logs.filter((log) => log.level === "warning").length,
-      error: logs.filter((log) => log.level === "error").length,
-      success: logs.filter((log) => log.level === "success").length,
-      debug: logs.filter((log) => log.level === "debug").length,
-    }
+    const result = await getLogs(options)
 
     return NextResponse.json({
-      logs,
-      stats,
-      timestamp: new Date().toISOString(),
+      success: true,
+      logs: result.logs,
+      total: result.total,
+      stats: result.stats,
     })
   } catch (error) {
-    console.error("Error fetching logs:", error)
-    return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 })
+    console.error("Failed to fetch logs:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch logs",
+        logs: [],
+        total: 0,
+        stats: { total: 0, info: 0, warning: 0, error: 0, success: 0, debug: 0 },
+      },
+      { status: 500 },
+    )
   }
 }

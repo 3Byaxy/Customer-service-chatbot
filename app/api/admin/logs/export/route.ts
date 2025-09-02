@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { exportLogs } from "@/environment/logging"
 
 // Helper function to convert logs to CSV format
 function convertToCSV(logs: any[]): string {
@@ -142,76 +143,39 @@ function generateMockLogs(count = 100) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const format = searchParams.get("format") || "json"
-    const level = searchParams.get("level")
-    const component = searchParams.get("component")
-    const search = searchParams.get("search")
-    const limit = Number.parseInt(searchParams.get("limit") || "1000")
 
-    // Generate logs (in production, query your SQL database)
-    let logs = generateMockLogs(limit)
-
-    // Apply filters
-    if (level && level !== "all") {
-      logs = logs.filter((log) => log.level === level)
+    const format = (searchParams.get("format") as "json" | "csv") || "json"
+    const options = {
+      level: searchParams.get("level") as any,
+      component: searchParams.get("component") || undefined,
+      search: searchParams.get("search") || undefined,
+      startDate: searchParams.get("startDate") || undefined,
+      endDate: searchParams.get("endDate") || undefined,
     }
 
-    if (component && component !== "all") {
-      logs = logs.filter((log) => log.component === component)
-    }
+    const exportData = await exportLogs(format, options)
 
-    if (search) {
-      const searchLower = search.toLowerCase()
-      logs = logs.filter(
-        (log) =>
-          log.message.toLowerCase().includes(searchLower) ||
-          log.details.toLowerCase().includes(searchLower) ||
-          log.userId.toLowerCase().includes(searchLower) ||
-          log.sessionId.toLowerCase().includes(searchLower) ||
-          log.endpoint.toLowerCase().includes(searchLower) ||
-          log.requestId.toLowerCase().includes(searchLower),
-      )
-    }
+    const timestamp = new Date().toISOString().split("T")[0]
+    const filename = `system-logs-${timestamp}.${format}`
 
-    const timestamp = new Date().toISOString().split("T")[0] // YYYY-MM-DD format
+    const headers = new Headers()
+    headers.set("Content-Disposition", `attachment; filename="${filename}"`)
 
     if (format === "csv") {
-      const csvContent = convertToCSV(logs)
-
-      return new NextResponse(csvContent, {
-        headers: {
-          "Content-Type": "text/csv",
-          "Content-Disposition": `attachment; filename="system-logs-${timestamp}.csv"`,
-        },
-      })
+      headers.set("Content-Type", "text/csv")
     } else {
-      // JSON format
-      const jsonContent = JSON.stringify(
-        {
-          exportInfo: {
-            timestamp: new Date().toISOString(),
-            totalLogs: logs.length,
-            filters: {
-              level: level || "all",
-              component: component || "all",
-              search: search || "none",
-            },
-          },
-          logs,
-        },
-        null,
-        2,
-      )
-
-      return new NextResponse(jsonContent, {
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Disposition": `attachment; filename="system-logs-${timestamp}.json"`,
-        },
-      })
+      headers.set("Content-Type", "application/json")
     }
+
+    return new NextResponse(exportData, { headers })
   } catch (error) {
-    console.error("Error exporting logs:", error)
-    return NextResponse.json({ error: "Failed to export logs" }, { status: 500 })
+    console.error("Failed to export logs:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to export logs",
+      },
+      { status: 500 },
+    )
   }
 }
