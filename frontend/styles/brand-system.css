@@ -1,0 +1,421 @@
+/* Import Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+
+/* CSS Variables */
+:root {
+  /* KyakuShien Colors */
+  --ks-primary: #1b2a49;
+  --ks-secondary: #2e2e2e;
+  --ks-accent: #4a90e2;
+  --ks-background: #f8fafc;
+  --ks-surface: #ffffff;
+  --ks-text-primary: #1b2a49;
+  --ks-text-secondary: #64748b;
+  --ks-text-muted: #94a3b8;
+
+  /* KizunaAI Colors */
+  --kai-primary: #2ec4b6;
+  --kai-secondary: #ff6b81;
+  --kai-accent: #a8e6cf;
+  --kai-background: #f0fdfa;
+  --kai-surface: #ffffff;
+  --kai-gradient-primary: linear-gradient(135deg, #2ec4b6 0%, #ff6b81 100%);
+  --kai-gradient-soft: linear-gradient(135deg, #a8e6cf 0%, #ffe5e5 100%);
+  --kai-gradient-glow: linear-gradient(135deg, #2ec4b6 0%, #ff6b81 50%, #a8e6cf 100%);
+
+  /* Typography */
+  --font-ks-primary: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ks-headings: "Montserrat", "Inter", sans-serif;
+  --font-kai-primary: "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-kai-headings: "Nunito", "Poppins", sans-serif;
+  --font-kai-chat: "Quicksand", "Poppins", sans-serif;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px var(--kai-primary);
+}
+
+/* Animations */
+@keyframes glow {
+  from {
+    box-shadow: 0 0 20px var(--kai-primary);
+    filter: brightness(1);
+  }
+  to {
+    box-shadow: 0 0 30px var(--kai-secondary);
+    filter: brightness(1.1);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Brand-specific utility classes */
+
+/* KyakuShien Styles */
+.ks-brand {
+  font-family: var(--font-ks-primary);
+  color: var(--ks-text-primary);
+}
+
+.ks-heading {
+  font-family: var(--font-ks-headings);
+  font-weight: 700;
+  color: var(--ks-primary);
+}
+
+.ks-button {
+  background: var(--ks-primary);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ks-primary);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ks-button:hover {
+  background: var(--ks-accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.ks-card {
+  background: var(--ks-surface);
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+/* KizunaAI Styles */
+.kai-brand {
+  font-family: var(--font-kai-primary);
+  color: var(--kai-text-primary);
+}
+
+.kai-heading {
+  font-family: var(--font-kai-headings);
+  font-weight: 600;
+  background: var(--kai-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.kai-chat-text {
+  font-family: var(--font-kai-chat);
+  font-weight: 400;
+}
+
+.kai-button {
+  background: var(--kai-gradient-primary);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-full);
+  font-family: var(--font-kai-primary);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kai-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.kai-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.kai-button:hover::before {
+  left: 100%;
+}
+
+.kai-card {
+  background: var(--kai-surface);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  position: relative;
+}
+
+.kai-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: var(--kai-gradient-soft);
+  border-radius: inherit;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask-composite: xor;
+}
+
+.kai-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full);
+  background: var(--kai-gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: float 3s ease-in-out infinite;
+  box-shadow: var(--shadow-glow);
+}
+
+.kai-orb {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--kai-gradient-glow);
+  animation: pulse 1.5s ease-in-out infinite;
+  position: relative;
+}
+
+.kai-orb::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.3);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Chat Interface Styles */
+.kai-chat-container {
+  background: var(--kai-background);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+
+.kai-chat-header {
+  background: var(--kai-gradient-primary);
+  color: white;
+  padding: var(--spacing-md);
+  font-family: var(--font-kai-headings);
+}
+
+.kai-message-user {
+  background: var(--kai-primary);
+  color: white;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-kai-chat);
+  margin-left: auto;
+  max-width: 80%;
+  animation: slideInUp 0.3s ease;
+}
+
+.kai-message-ai {
+  background: white;
+  color: var(--kai-text-primary);
+  border: 1px solid var(--kai-accent);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-kai-chat);
+  margin-right: auto;
+  max-width: 80%;
+  animation: slideInUp 0.3s ease;
+  position: relative;
+}
+
+.kai-message-ai::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid white;
+}
+
+/* Typing Indicator */
+.kai-typing {
+  display: flex;
+  gap: 4px;
+  padding: var(--spacing-sm);
+}
+
+.kai-typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--kai-primary);
+  animation: pulse 1.4s ease-in-out infinite both;
+}
+
+.kai-typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.kai-typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+.kai-typing-dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+/* Dashboard Styles */
+.ks-dashboard {
+  background: var(--ks-background);
+  min-height: 100vh;
+  font-family: var(--font-ks-primary);
+}
+
+.ks-dashboard-header {
+  background: var(--ks-surface);
+  border-bottom: 1px solid #e2e8f0;
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ks-metric-card {
+  background: var(--ks-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.ks-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .kai-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .kai-orb {
+    width: 35px;
+    height: 35px;
+  }
+
+  .kai-message-user,
+  .kai-message-ai {
+    max-width: 90%;
+  }
+
+  .ks-card,
+  .kai-card {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .kai-card {
+    border: 2px solid var(--kai-primary);
+  }
+
+  .ks-card {
+    border: 2px solid var(--ks-primary);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ks-background: #0f172a;
+    --ks-surface: #1e293b;
+    --ks-text-primary: #f1f5f9;
+    --ks-text-secondary: #cbd5e1;
+    --ks-text-muted: #94a3b8;
+
+    --kai-background: #0a1a1a;
+    --kai-surface: #1a2f2f;
+  }
+}
