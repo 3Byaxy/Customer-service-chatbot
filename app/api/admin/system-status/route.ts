@@ -1,83 +1,230 @@
 import { NextResponse } from "next/server"
+import { getDatabaseHealth, testConnection } from "@/lib/database"
 
 export async function GET() {
   try {
-    // Simulate system status check
-    const systemStatus = {
-      overall: {
+    // Get database health
+    const dbHealth = getDatabaseHealth()
+    const dbConnection = await testConnection()
+
+    // System metrics
+    const uptime = process.uptime()
+    const memoryUsage = process.memoryUsage()
+    const cpuUsage = process.cpuUsage()
+
+    // Calculate memory percentages
+    const memoryUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024)
+    const memoryTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024)
+    const memoryUsagePercent = Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100)
+
+    // Mock additional system metrics (in production, you'd get these from actual system monitoring)
+    const systemMetrics = {
+      cpu: {
+        usage: Math.min(95, Math.max(5, 15 + Math.random() * 30)), // Mock CPU usage between 5-45%
+        cores: require("os").cpus().length,
+        loadAverage: require("os").loadavg(),
+      },
+      memory: {
+        used: memoryUsedMB,
+        total: memoryTotalMB,
+        percentage: memoryUsagePercent,
+        available: memoryTotalMB - memoryUsedMB,
+      },
+      disk: {
+        used: Math.round(45 + Math.random() * 20), // Mock disk usage
+        total: 100,
+        available: Math.round(35 + Math.random() * 20),
+      },
+      network: {
+        bytesIn: Math.round(Math.random() * 1000000),
+        bytesOut: Math.round(Math.random() * 500000),
+        connectionsActive: Math.round(10 + Math.random() * 40),
+      },
+    }
+
+    // API Provider Status (mock data - in production, you'd check actual providers)
+    const apiProviders = [
+      {
+        name: "Google Gemini",
+        status: "active",
+        responseTime: Math.round(200 + Math.random() * 300),
+        successRate: 99.2,
+        requestsToday: Math.round(150 + Math.random() * 100),
+        rateLimit: {
+          used: Math.round(Math.random() * 50),
+          total: 60,
+          resetTime: new Date(Date.now() + 60000).toISOString(),
+        },
+      },
+      {
+        name: "Groq",
+        status: process.env.GROQ_API_KEY ? "standby" : "not_configured",
+        responseTime: Math.round(150 + Math.random() * 200),
+        successRate: 98.8,
+        requestsToday: 0,
+        rateLimit: {
+          used: 0,
+          total: 100,
+          resetTime: new Date(Date.now() + 60000).toISOString(),
+        },
+      },
+      {
+        name: "Anthropic Claude",
+        status: process.env.ANTHROPIC_API_KEY ? "active" : "not_configured",
+        responseTime: Math.round(300 + Math.random() * 400),
+        successRate: 99.5,
+        requestsToday: Math.round(Math.random() * 50),
+        rateLimit: {
+          used: Math.round(Math.random() * 30),
+          total: 50,
+          resetTime: new Date(Date.now() + 60000).toISOString(),
+        },
+      },
+      {
+        name: "OpenAI",
+        status: process.env.OPENAI_API_KEY ? "standby" : "not_configured",
+        responseTime: Math.round(400 + Math.random() * 300),
+        successRate: 99.1,
+        requestsToday: 0,
+        rateLimit: {
+          used: 0,
+          total: 40,
+          resetTime: new Date(Date.now() + 60000).toISOString(),
+        },
+      },
+    ]
+
+    // Service Status
+    const services = [
+      {
+        name: "API Gateway",
         status: "healthy",
-        uptime: "99.9%",
+        uptime: uptime,
         lastCheck: new Date().toISOString(),
+        responseTime: Math.round(50 + Math.random() * 100),
       },
-      services: {
-        ai: [
-          {
-            name: "Google Gemini",
-            status: "healthy",
-            responseTime: Math.floor(Math.random() * 200) + 100,
-            lastCheck: new Date().toISOString(),
-          },
-          {
-            name: "API Router",
-            status: "healthy",
-            responseTime: Math.floor(Math.random() * 50) + 10,
-            lastCheck: new Date().toISOString(),
-          },
-          {
-            name: "Context Manager",
-            status: "healthy",
-            responseTime: Math.floor(Math.random() * 30) + 5,
-            lastCheck: new Date().toISOString(),
-          },
-        ],
-        database: [
-          {
-            name: "Session Storage",
-            status: "healthy",
-            connections: Math.floor(Math.random() * 20) + 5,
-            lastCheck: new Date().toISOString(),
-          },
-          {
-            name: "Context Storage",
-            status: "healthy",
-            size: "12.3MB",
-            lastCheck: new Date().toISOString(),
-          },
-        ],
+      {
+        name: "Database",
+        status: dbHealth.status === "healthy" ? "healthy" : dbHealth.status === "warning" ? "degraded" : "unhealthy",
+        uptime: uptime,
+        lastCheck: new Date().toISOString(),
+        responseTime: dbHealth.metrics.averageQueryTime,
       },
-      metrics: {
-        totalConversations: Math.floor(Math.random() * 1000) + 500,
-        apiRequestsToday: Math.floor(Math.random() * 2000) + 1000,
-        activeUsers: Math.floor(Math.random() * 100) + 50,
-        successRate: Math.floor(Math.random() * 10) + 90,
-        averageResponseTime: Math.floor(Math.random() * 300) + 200,
-        errorRate: Math.floor(Math.random() * 5) + 1,
+      {
+        name: "Context Manager",
+        status: "healthy",
+        uptime: uptime,
+        lastCheck: new Date().toISOString(),
+        responseTime: Math.round(30 + Math.random() * 70),
       },
+      {
+        name: "Analytics Engine",
+        status: "healthy",
+        uptime: uptime,
+        lastCheck: new Date().toISOString(),
+        responseTime: Math.round(100 + Math.random() * 200),
+      },
+      {
+        name: "Rate Limiter",
+        status: "healthy",
+        uptime: uptime,
+        lastCheck: new Date().toISOString(),
+        responseTime: Math.round(10 + Math.random() * 30),
+      },
+    ]
+
+    // Overall system status
+    const criticalIssues = services.filter((s) => s.status === "unhealthy").length
+    const warnings = services.filter((s) => s.status === "degraded").length
+
+    let overallStatus = "healthy"
+    if (criticalIssues > 0) {
+      overallStatus = "critical"
+    } else if (warnings > 0 || dbHealth.status === "warning") {
+      overallStatus = "warning"
+    }
+
+    // Recent activity summary
+    const activitySummary = {
+      totalRequests: Math.round(500 + Math.random() * 1000),
+      successfulRequests: Math.round(480 + Math.random() * 500),
+      failedRequests: Math.round(Math.random() * 20),
+      averageResponseTime: Math.round(250 + Math.random() * 200),
+      activeUsers: Math.round(20 + Math.random() * 80),
+      activeSessions: Math.round(15 + Math.random() * 60),
+    }
+
+    const response = {
+      timestamp: new Date().toISOString(),
+      status: overallStatus,
+      uptime: Math.floor(uptime),
+      version: "1.0.0",
+      environment: process.env.NODE_ENV || "development",
+
+      system: systemMetrics,
+      database: {
+        status: dbHealth.status,
+        connection: dbConnection.success,
+        metrics: dbHealth.metrics,
+        pool: dbHealth.poolInfo,
+        cache: dbHealth.cacheInfo,
+      },
+
+      services,
+      apiProviders,
+      activity: activitySummary,
+
       alerts: [
-        {
-          id: 1,
-          type: "info",
-          message: "System health check passed",
-          timestamp: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 2,
-          type: "warning",
-          message: "API request volume increased by 45%",
-          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 3,
-          type: "success",
-          message: "Context cleanup completed successfully",
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
+        ...(criticalIssues > 0
+          ? [
+              {
+                level: "critical",
+                message: `${criticalIssues} service(s) are unhealthy`,
+                timestamp: new Date().toISOString(),
+              },
+            ]
+          : []),
+        ...(warnings > 0
+          ? [
+              {
+                level: "warning",
+                message: `${warnings} service(s) are degraded`,
+                timestamp: new Date().toISOString(),
+              },
+            ]
+          : []),
+        ...(dbHealth.status === "warning"
+          ? [
+              {
+                level: "warning",
+                message: "Database performance is degraded",
+                timestamp: new Date().toISOString(),
+              },
+            ]
+          : []),
+        ...(systemMetrics.memory.percentage > 80
+          ? [
+              {
+                level: "warning",
+                message: `High memory usage: ${systemMetrics.memory.percentage}%`,
+                timestamp: new Date().toISOString(),
+              },
+            ]
+          : []),
       ],
     }
 
-    return NextResponse.json(systemStatus)
+    return NextResponse.json(response)
   } catch (error) {
-    console.error("Failed to get system status:", error)
-    return NextResponse.json({ error: "Failed to get system status" }, { status: 500 })
+    console.error("System status check failed:", error)
+    return NextResponse.json(
+      {
+        timestamp: new Date().toISOString(),
+        status: "critical",
+        error: "Failed to get system status",
+        details: (error as Error).message,
+      },
+      { status: 500 },
+    )
   }
 }
