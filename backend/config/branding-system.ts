@@ -156,3 +156,13 @@ export const CSS_VARIABLES = `
   50% { transform: translateY(-10px); }
 }
 `
+
+// Combined brand configuration for easy access
+export const BRAND_CONFIG = {
+  kyakuShien: KYAKU_SHIEN_BRAND,
+  kizunaAI: KIZUNA_AI_BRAND,
+  unified: UNIFIED_BRAND,
+  cssVariables: CSS_VARIABLES,
+}
+
+export type BrandConfig = typeof BRAND_CONFIG

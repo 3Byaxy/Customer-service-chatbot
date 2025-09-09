@@ -1,141 +1,193 @@
 "use client"
 
-import { useState } from "react"
+import { KYAKU_SHIEN_BRAND } from "../../../backend/config/branding-system"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Menu, X, Shield, BarChart3, Settings, Users } from "lucide-react"
-import { KYAKU_SHIEN_BRAND } from "../../../backend/config/branding-system"
+import { Settings, Bell, User, Menu, X } from "lucide-react"
+import { useState } from "react"
 
 interface KyakuShienHeaderProps {
-  currentPage?: string
-  onNavigate?: (page: string) => void
-  showSystemStatus?: boolean
+  title?: string
+  subtitle?: string
+  showNotifications?: boolean
+  showUserMenu?: boolean
+  className?: string
 }
 
 export default function KyakuShienHeader({
-  currentPage = "dashboard",
-  onNavigate,
-  showSystemStatus = true,
+  title = "KyakuShien",
+  subtitle = "AI-powered Customer Support Platform",
+  showNotifications = true,
+  showUserMenu = true,
+  className = "",
 }: KyakuShienHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  const navigationItems = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "admin", label: "Admin Panel", icon: Shield },
-    { id: "users", label: "User Management", icon: Users },
-    { id: "settings", label: "Settings", icon: Settings },
-  ]
-
   return (
-    <header className="ks-dashboard-header">
-      <div className="container mx-auto">
-        <div className="flex items-center justify-between">
-          {/* Logo and Brand */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              {/* KyakuShien Logo */}
-              <div className="p-2 bg-gradient-to-br from-ks-primary to-ks-accent rounded-lg">
-                <Shield className="h-8 w-8 text-white" />
+    <header
+      className={`bg-white border-b border-gray-200 shadow-sm ${className}`}
+      style={{
+        fontFamily: KYAKU_SHIEN_BRAND.typography.primary,
+        color: KYAKU_SHIEN_BRAND.colors.text.primary,
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo and Title */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg"
+                style={{
+                  background: `linear-gradient(135deg, ${KYAKU_SHIEN_BRAND.colors.primary} 0%, ${KYAKU_SHIEN_BRAND.colors.accent} 100%)`,
+                  fontFamily: KYAKU_SHIEN_BRAND.typography.headings,
+                }}
+              >
+                客
               </div>
-
-              <div>
-                <h1 className="ks-heading text-2xl font-bold">{KYAKU_SHIEN_BRAND.name}</h1>
-                <p className="text-sm text-ks-text-secondary">{KYAKU_SHIEN_BRAND.tagline}</p>
+              <div className="hidden sm:block">
+                <h1
+                  className="text-xl font-bold"
+                  style={{
+                    fontFamily: KYAKU_SHIEN_BRAND.typography.headings,
+                    color: KYAKU_SHIEN_BRAND.colors.primary,
+                  }}
+                >
+                  {title}
+                </h1>
+                <p
+                  className="text-sm"
+                  style={{
+                    color: KYAKU_SHIEN_BRAND.colors.text.secondary,
+                  }}
+                >
+                  {subtitle}
+                </p>
               </div>
-            </div>
-
-            {/* Japanese Characters */}
-            <div className="hidden md:block">
-              <span className="text-lg font-medium text-ks-text-muted">客支援</span>
             </div>
           </div>
 
-          {/* Navigation - Desktop */}
-          <nav className="hidden lg:flex items-center gap-6">
-            {navigationItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate?.(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                    currentPage === item.id
-                      ? "bg-ks-primary text-white shadow-md"
-                      : "text-ks-text-secondary hover:text-ks-primary hover:bg-ks-background"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              )
-            })}
-          </nav>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4">
+            <nav className="flex items-center space-x-6">
+              <a
+                href="#dashboard"
+                className="text-sm font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Dashboard
+              </a>
+              <a
+                href="#conversations"
+                className="text-sm font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Conversations
+              </a>
+              <a
+                href="#analytics"
+                className="text-sm font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Analytics
+              </a>
+              <a
+                href="#settings"
+                className="text-sm font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Settings
+              </a>
+            </nav>
 
-          {/* System Status and Actions */}
-          <div className="flex items-center gap-4">
-            {showSystemStatus && (
-              <div className="hidden md:flex items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm font-medium text-ks-text-secondary">System Operational</span>
-                </div>
-                <Badge variant="outline" className="text-xs">
-                  v2.0.0
-                </Badge>
-              </div>
-            )}
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              {showNotifications && (
+                <Button variant="ghost" size="sm" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500">
+                    3
+                  </Badge>
+                </Button>
+              )}
 
-            {/* Mobile Menu Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="lg:hidden bg-transparent"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              <Button variant="ghost" size="sm">
+                <Settings className="h-5 w-5" />
+              </Button>
+
+              {showUserMenu && (
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span className="text-sm font-medium">Admin</span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden mt-4 pb-4 border-t border-gray-200">
-            <nav className="flex flex-col gap-2 mt-4">
-              {navigationItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      onNavigate?.(item.id)
-                      setIsMobileMenuOpen(false)
-                    }}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                      currentPage === item.id
-                        ? "bg-ks-primary text-white"
-                        : "text-ks-text-secondary hover:text-ks-primary hover:bg-ks-background"
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                )
-              })}
+          <div className="md:hidden border-t border-gray-200 py-4">
+            <nav className="flex flex-col space-y-4">
+              <a
+                href="#dashboard"
+                className="text-base font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Dashboard
+              </a>
+              <a
+                href="#conversations"
+                className="text-base font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Conversations
+              </a>
+              <a
+                href="#analytics"
+                className="text-base font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Analytics
+              </a>
+              <a
+                href="#settings"
+                className="text-base font-medium hover:text-blue-600 transition-colors"
+                style={{ color: KYAKU_SHIEN_BRAND.colors.text.primary }}
+              >
+                Settings
+              </a>
             </nav>
 
-            {showSystemStatus && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-ks-text-secondary">System Operational</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    v2.0.0
-                  </Badge>
-                </div>
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center space-x-3">
+                {showNotifications && (
+                  <Button variant="ghost" size="sm" className="relative">
+                    <Bell className="h-5 w-5" />
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-red-500">
+                      3
+                    </Badge>
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm">
+                  <Settings className="h-5 w-5" />
+                </Button>
               </div>
-            )}
+
+              {showUserMenu && (
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span className="text-sm font-medium">Admin</span>
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>
