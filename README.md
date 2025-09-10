@@ -1,136 +1,130 @@
 # AI Customer Support System
 
-A comprehensive AI-powered customer support system with multi-language support, intelligent escalation, and multiple AI provider integration.
+A comprehensive AI-powered customer support system with multi-language support, multiple AI providers, and intelligent escalation.
 
 ## Features
 
-- **Multi-Language Support**: English, Luganda, and Swahili
-- **Multiple AI Providers**: OpenAI, Anthropic Claude, Google Gemini, and Groq
-- **Business Type Customization**: Telecom, Banking, Utilities, E-commerce
-- **Intelligent Escalation**: Automatic detection of complex issues
-- **Real-time Chat Interface**: Interactive chat with session management
-- **Admin Dashboard**: Comprehensive management and analytics
-- **Knowledge Base Integration**: Context-aware responses
+- 🤖 **Multiple AI Providers**: Support for Anthropic Claude, OpenAI GPT-4, Google Gemini, and Groq Llama
+- 🌍 **Multi-Language Support**: English, Luganda, and Swahili
+- 🏢 **Business-Specific**: Tailored prompts for Telecom, Banking, Utilities, and E-commerce
+- 🚀 **Smart Escalation**: Automatic detection of complex issues requiring human intervention
+- 📱 **Responsive Design**: Works perfectly on desktop and mobile devices
+- ⚡ **Real-time Chat**: Instant responses with typing indicators
+- 🔒 **Session Management**: Secure session handling for each customer interaction
 
-## Getting Started
+## Quick Start
 
-### Prerequisites
+### 1. Clone and Install
 
-- Node.js 18+ 
-- npm or yarn
-- API keys for your chosen AI providers
-
-### Installation
-
-1. Clone the repository:
 \`\`\`bash
-git clone <repository-url>
+git clone <your-repo-url>
 cd ai-customer-support
-\`\`\`
-
-2. Install dependencies:
-\`\`\`bash
 npm install
 \`\`\`
 
-3. Set up environment variables:
+### 2. Environment Setup
+
+Copy `.env.example` to `.env.local` and add your API keys:
+
 \`\`\`bash
 cp .env.example .env.local
 \`\`\`
 
-4. Add your API keys to `.env.local`:
-\`\`\`env
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here
-GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
-\`\`\`
+Add at least one AI provider API key:
+- **Anthropic Claude** (recommended): Get key from [console.anthropic.com](https://console.anthropic.com)
+- **OpenAI GPT-4**: Get key from [platform.openai.com](https://platform.openai.com)
+- **Google Gemini**: Get key from [ai.google.dev](https://ai.google.dev)
+- **Groq**: Get key from [console.groq.com](https://console.groq.com)
 
-5. Run the development server:
+### 3. Run Development Server
+
 \`\`\`bash
 npm run dev
 \`\`\`
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
+
+## Deployment to Vercel
+
+### Option 1: Deploy from GitHub (Recommended)
+
+1. Push your code to GitHub
+2. Go to [vercel.com/dashboard](https://vercel.com/dashboard)
+3. Click "New Project" and import your GitHub repository
+4. Add environment variables in Vercel dashboard:
+   - `ANTHROPIC_API_KEY`
+   - `OPENAI_API_KEY` (optional)
+   - `GOOGLE_GENERATIVE_AI_API_KEY` (optional)
+   - `GROQ_API_KEY` (optional)
+5. Deploy!
+
+### Option 2: Deploy with Vercel CLI
+
+\`\`\`bash
+npm i -g vercel
+vercel
+\`\`\`
+
+Follow the prompts and add your environment variables when asked.
 
 ## Usage
 
-### Customer Interface
-
-1. Enter your email address
-2. Select your business type and preferred language
-3. Choose an AI provider
-4. Start chatting with the AI assistant
-
-### Admin Interface
-
-Visit `/admin` to access the administrative dashboard with:
-- Real-time conversation monitoring
-- System performance metrics
-- User management
-- Analytics and reporting
+1. **Start a Session**: Enter your email and select business type, language, and AI provider
+2. **Chat**: Type your customer service questions in your preferred language
+3. **Smart Responses**: Get contextual responses based on your business type
+4. **Escalation**: Complex issues are automatically flagged for human intervention
 
 ## API Endpoints
 
 - `POST /api/sessions` - Create a new chat session
-- `POST /api/chat` - Send messages and receive AI responses
-- `GET /api/admin/system-status` - Get system health status
-- `GET /api/admin/conversations` - Retrieve conversation history
+- `POST /api/chat` - Send messages and get AI responses
+- `GET /api/sessions` - Health check for sessions API
+- `GET /api/chat` - Health check for chat API
 
-## Deployment
+## Supported Languages
 
-### Vercel (Recommended)
+- **English**: Full support with business-specific prompts
+- **Luganda**: Native Ugandan language support
+- **Swahili**: East African language support
 
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
+## Business Types
 
-### Manual Deployment
+- **Telecommunications**: Billing, technical issues, service plans
+- **Banking & Finance**: Account inquiries, transactions, loans
+- **Utilities**: Billing, outages, meter readings, connections
+- **E-commerce**: Orders, returns, payments, product inquiries
 
-1. Build the application:
-\`\`\`bash
-npm run build
-\`\`\`
+## Architecture
 
-2. Start the production server:
-\`\`\`bash
-npm start
-\`\`\`
+- **Frontend**: Next.js 14 with React Server Components
+- **Backend**: Next.js API Routes (serverless functions)
+- **AI**: Multiple providers via Vercel AI SDK
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Deployment**: Optimized for Vercel platform
 
-## Configuration
+## Environment Variables
 
-### Business Types
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Yes* | Anthropic Claude API key |
+| `OPENAI_API_KEY` | No | OpenAI GPT-4 API key |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | No | Google Gemini API key |
+| `GROQ_API_KEY` | No | Groq Llama API key |
 
-The system supports different business types with customized prompts:
-- Telecommunications
-- Banking & Finance
-- Utilities
-- E-commerce
-
-### Languages
-
-Currently supported languages:
-- English (en)
-- Luganda (lg)
-- Swahili (sw)
-
-### AI Providers
-
-Integrated AI providers:
-- OpenAI GPT-4
-- Anthropic Claude
-- Google Gemini
-- Groq Llama
+*At least one AI provider API key is required.
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests if applicable
+4. Test thoroughly
 5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License - see LICENSE file for details.
+
+## Support
+
+For support, please open an issue on GitHub or contact the development team.

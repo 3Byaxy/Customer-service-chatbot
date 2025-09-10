@@ -1,44 +1,17 @@
 {
-  "version": 2,
-  "name": "kyaku-shien-ai-support",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
-  "env": {
-    "GOOGLE_GENERATIVE_AI_API_KEY": "@google_ai_key",
-    "GROQ_API_KEY": "@groq_key",
-    "OPENAI_API_KEY": "@openai_key",
-    "ANTHROPIC_API_KEY": "@anthropic_key",
-    "NEXT_PUBLIC_SUPABASE_URL": "https://uckvdxvgdfzhzjqdhztz.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVja3ZkeHZnZGZ6aHpqcWRoenR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NDk5NDIsImV4cCI6MjA3MzAyNTk0Mn0.-3qr1-HRAm3q1va_2rPQTPg5VSKecDhkK4Rs8JzpMSU",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_key",
-    "UPSTASH_REDIS_REST_URL": "@upstash_redis_url",
-    "UPSTASH_REDIS_REST_TOKEN": "@upstash_redis_token",
-    "SUPABASE_URL": "https://uckvdxvgdfzhzjqdhztz.supabase.co",
-    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVja3ZkeHZnZGZ6aHpqcWRoenR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0NDk5NDIsImV4cCI6MjA3MzAyNTk0Mn0.-3qr1-HRAm3q1va_2rPQTPg5VSKecDhkK4Rs8JzpMSU"
-  },
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
   "functions": {
-    "app/api/chat/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/*/route.ts": {
-      "maxDuration": 30
-    },
     "app/api/**/*.ts": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "ANTHROPIC_API_KEY": "@anthropic_api_key",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "GOOGLE_GENERATIVE_AI_API_KEY": "@google_api_key",
+    "GROQ_API_KEY": "@groq_api_key"
   }
 }

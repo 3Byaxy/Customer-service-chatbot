@@ -46,7 +46,7 @@ export default function HomePage() {
         <EnhancedChatInterface />
 
         <div className="mt-12 text-center">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 max-w-6xl mx-auto">
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="font-semibold text-gray-900 mb-2">Multi-Language</h3>
               <p className="text-sm text-gray-600">English, Luganda, Swahili</p>
@@ -62,6 +62,14 @@ export default function HomePage() {
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h3 className="font-semibold text-gray-900 mb-2">Industry Specific</h3>
               <p className="text-sm text-gray-600">Telecom, Banking, Utilities, E-commerce</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="font-semibold text-gray-900 mb-2">Multiple AI Providers</h3>
+              <p className="text-sm text-gray-600">Choose from OpenAI, Anthropic, Google, or Groq</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="font-semibold text-gray-900 mb-2">Smart Escalation</h3>
+              <p className="text-sm text-gray-600">Automatic routing to human agents when needed</p>
             </div>
           </div>
         </div>
@@ -299,7 +307,7 @@ export default function HomePage() {
                     <CardContent className="p-4 text-center">
                       <Bot className="h-8 w-8 mx-auto mb-2" style={{ color: KIZUNA_AI_BRAND.colors.primary }} />
                       <h3 className="font-semibold">AI Brain</h3>
-                      <p className="text-sm text-gray-600">OpenAI & Hugging Face</p>
+                      <p className="text-sm text-gray-600">Multiple AI Providers</p>
                     </CardContent>
                   </Card>
 
@@ -307,7 +315,7 @@ export default function HomePage() {
                     <CardContent className="p-4 text-center">
                       <BarChart3 className="h-8 w-8 mx-auto mb-2" style={{ color: KYAKU_SHIEN_BRAND.colors.accent }} />
                       <h3 className="font-semibold">Database</h3>
-                      <p className="text-sm text-gray-600">Supabase integration</p>
+                      <p className="text-sm text-gray-600">Session management</p>
                     </CardContent>
                   </Card>
 
@@ -315,7 +323,7 @@ export default function HomePage() {
                     <CardContent className="p-4 text-center">
                       <Zap className="h-8 w-8 mx-auto mb-2" style={{ color: KYAKU_SHIEN_BRAND.colors.warning }} />
                       <h3 className="font-semibold">Automation</h3>
-                      <p className="text-sm text-gray-600">n8n workflows</p>
+                      <p className="text-sm text-gray-600">Smart escalation</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -328,9 +336,9 @@ export default function HomePage() {
                       <ul className="text-sm text-gray-600 space-y-1">
                         <li>• Multi-language chat interface</li>
                         <li>• Real-time conversation handling</li>
-                        <li>• Admin approval system</li>
-                        <li>• Live complaints dashboard</li>
-                        <li>• Brand system integration</li>
+                        <li>• Multiple AI provider support</li>
+                        <li>• Smart escalation system</li>
+                        <li>• Business-specific prompts</li>
                       </ul>
                     </div>
                     <div className="space-y-2">
