@@ -1,116 +1,146 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { KIZUNA_AI_BRAND } from "../../../backend/config/branding-system"
-import { Bot, Heart, Sparkles, MessageCircle } from "lucide-react"
 
 interface KizunaAIAvatarProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl"
-  variant?: "orb" | "ribbon" | "geometric" | "simple"
-  mood?: "happy" | "thinking" | "excited" | "calm"
+  variant?: "orb" | "character" | "minimal"
+  mood?: "happy" | "thinking" | "helping" | "concerned" | "neutral"
   isActive?: boolean
+  isTyping?: boolean
   className?: string
+  onClick?: () => void
 }
 
 export default function KizunaAIAvatar({
   size = "md",
   variant = "orb",
-  mood = "happy",
+  mood = "neutral",
   isActive = false,
+  isTyping = false,
   className = "",
+  onClick,
 }: KizunaAIAvatarProps) {
-  const getSizeClasses = () => {
-    switch (size) {
-      case "xs":
-        return "w-6 h-6"
-      case "sm":
-        return "w-8 h-8"
-      case "md":
-        return "w-12 h-12"
-      case "lg":
-        return "w-16 h-16"
-      case "xl":
-        return "w-24 h-24"
-      default:
-        return "w-12 h-12"
+  const [currentMood, setCurrentMood] = useState(mood)
+
+  useEffect(() => {
+    if (isTyping) {
+      setCurrentMood("thinking")
+    } else {
+      setCurrentMood(mood)
     }
+  }, [isTyping, mood])
+
+  const sizeClasses = {
+    xs: "w-6 h-6",
+    sm: "w-8 h-8",
+    md: "w-10 h-10",
+    lg: "w-12 h-12",
+    xl: "w-16 h-16",
   }
 
-  const getIconSize = () => {
-    switch (size) {
-      case "xs":
-        return "h-3 w-3"
-      case "sm":
-        return "h-4 w-4"
-      case "md":
-        return "h-6 w-6"
-      case "lg":
-        return "h-8 w-8"
-      case "xl":
-        return "h-12 w-12"
-      default:
-        return "h-6 w-6"
-    }
-  }
-
-  const getMoodIcon = () => {
-    switch (mood) {
+  const getMoodColor = () => {
+    switch (currentMood) {
+      case "happy":
+        return KIZUNA_AI_BRAND.colors.mood.happy
       case "thinking":
-        return <MessageCircle className={getIconSize()} />
-      case "excited":
-        return <Sparkles className={getIconSize()} />
-      case "calm":
-        return <Heart className={getIconSize()} />
+        return KIZUNA_AI_BRAND.colors.mood.thinking
+      case "helping":
+        return KIZUNA_AI_BRAND.colors.mood.helping
+      case "concerned":
+        return KIZUNA_AI_BRAND.colors.mood.concerned
       default:
-        return <Bot className={getIconSize()} />
+        return KIZUNA_AI_BRAND.colors.primary
     }
   }
 
-  const getVariantStyles = () => {
-    const baseClasses = `${getSizeClasses()} rounded-full flex items-center justify-center text-white transition-all duration-300 ${className}`
-
-    switch (variant) {
-      case "orb":
-        return `${baseClasses} ${isActive ? "animate-pulse shadow-lg" : ""}`
-      case "ribbon":
-        return `${baseClasses} rounded-lg transform rotate-12 hover:rotate-0`
-      case "geometric":
-        return `${baseClasses} rounded-none clip-path-polygon`
-      case "simple":
-        return `${baseClasses} border-2 border-white/30`
-      default:
-        return baseClasses
-    }
-  }
-
-  const getBackgroundStyle = () => {
-    if (isActive) {
+  const getGradientStyle = () => {
+    if (variant === "orb") {
       return {
-        background: KIZUNA_AI_BRAND.colors.gradient.glow,
-        boxShadow: `0 0 20px ${KIZUNA_AI_BRAND.colors.primary}`,
+        background: isActive
+          ? KIZUNA_AI_BRAND.colors.gradient.primary
+          : `linear-gradient(135deg, ${getMoodColor()} 0%, ${KIZUNA_AI_BRAND.colors.secondary} 100%)`,
       }
     }
-    return {
-      background: KIZUNA_AI_BRAND.colors.gradient.primary,
-    }
+    return {}
   }
 
-  return (
-    <div className={getVariantStyles()} style={getBackgroundStyle()}>
-      {getMoodIcon()}
-
-      {/* Floating particles for active state */}
-      {isActive && variant === "orb" && (
-        <>
-          <div
-            className="absolute -top-1 -right-1 w-2 h-2 rounded-full animate-ping"
-            style={{ backgroundColor: KIZUNA_AI_BRAND.colors.accent }}
-          />
-          <div
-            className="absolute -bottom-1 -left-1 w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ backgroundColor: KIZUNA_AI_BRAND.colors.secondary }}
-          />
-        </>
-      )}
+  const renderOrbAvatar = () => (
+    <div
+      className={`
+        ${sizeClasses[size]} 
+        rounded-full 
+        flex items-center justify-center 
+        text-white font-bold 
+        transition-all duration-300 
+        ${isActive ? "animate-pulse-soft shadow-lg" : ""} 
+        ${isTyping ? "animate-bounce-gentle" : ""} 
+        ${onClick ? "cursor-pointer hover:scale-110" : ""} 
+        ${className}
+      `}
+      style={getGradientStyle()}
+      onClick={onClick}
+    >
+      {/* AI Symbol */}
+      <div className="relative">
+        <div className="w-3 h-3 bg-white rounded-full opacity-90"></div>
+        <div className="absolute top-0 left-0 w-3 h-3 bg-white rounded-full animate-ping opacity-30"></div>
+      </div>
     </div>
   )
+
+  const renderCharacterAvatar = () => (
+    <div
+      className={`
+        ${sizeClasses[size]} 
+        rounded-full 
+        flex items-center justify-center 
+        text-white font-bold 
+        transition-all duration-300 
+        ${isActive ? "animate-glow" : ""} 
+        ${isTyping ? "animate-bounce-gentle" : ""} 
+        ${onClick ? "cursor-pointer hover:scale-110" : ""} 
+        ${className}
+      `}
+      style={getGradientStyle()}
+      onClick={onClick}
+    >
+      {/* Character representation */}
+      <div className="text-lg">🤖</div>
+    </div>
+  )
+
+  const renderMinimalAvatar = () => (
+    <div
+      className={`
+        ${sizeClasses[size]} 
+        rounded-lg 
+        flex items-center justify-center 
+        border-2 
+        transition-all duration-300 
+        ${isActive ? "border-opacity-100" : "border-opacity-50"} 
+        ${isTyping ? "animate-pulse" : ""} 
+        ${onClick ? "cursor-pointer hover:scale-105" : ""} 
+        ${className}
+      `}
+      style={{
+        borderColor: getMoodColor(),
+        backgroundColor: isActive ? `${getMoodColor()}20` : "transparent",
+      }}
+      onClick={onClick}
+    >
+      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: getMoodColor() }}></div>
+    </div>
+  )
+
+  switch (variant) {
+    case "character":
+      return renderCharacterAvatar()
+    case "minimal":
+      return renderMinimalAvatar()
+    case "orb":
+    default:
+      return renderOrbAvatar()
+  }
 }

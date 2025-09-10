@@ -2,281 +2,357 @@
 
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Bot, Shield, Sparkles, Globe, Zap, Users } from "lucide-react"
+import { Shield, Bot, Zap, Globe, Users, BarChart3, MessageSquare, Settings } from "lucide-react"
 
 // Import components
+import KyakuShienHeader from "@/frontend/components/brand/kyaku-shien-header"
 import KyakuShienDashboard from "@/frontend/components/kyaku-shien-dashboard"
 import KizunaAIWidget from "@/frontend/components/kizuna-ai-widget"
 import BrandShowcase from "@/frontend/components/brand/brand-showcase"
+import RealtimeComplaintsDashboard from "@/components/realtime-complaints-dashboard"
+import AdminApprovalInterface from "@/components/admin-approval-interface"
+import EnhancedChatInterface from "@/components/enhanced-chat-interface"
+
+// Import branding
+import { KYAKU_SHIEN_BRAND, KIZUNA_AI_BRAND } from "@/backend/config/branding-system"
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState("dashboard")
-  const [showChatWidget, setShowChatWidget] = useState(false)
+  const [currentPage, setCurrentPage] = useState("dashboard")
+  const [activeTab, setActiveTab] = useState("overview")
+
+  const handleNavigation = (page: string) => {
+    setCurrentPage(page)
+  }
+
+  const handleApprovalRequest = (request: any) => {
+    console.log("Approval request received:", request)
+    // Handle approval request logic here
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-teal-600">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-6 mb-8">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-xl mb-3">
-                  <Shield className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "Montserrat, sans-serif" }}>
-                  KyakuShien
-                </h2>
-                <p className="text-sm text-blue-100">Professional Platform</p>
-              </div>
-
-              <div className="text-4xl text-white/60">+</div>
-
-              <div className="text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-pink-400 rounded-2xl flex items-center justify-center shadow-xl mb-3 animate-pulse">
-                  <Bot className="h-10 w-10 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-white" style={{ fontFamily: "Nunito, sans-serif" }}>
-                  KizunaAI
-                </h2>
-                <p className="text-sm text-blue-100">Friendly Companion</p>
-              </div>
-            </div>
-
-            <h1
-              className="text-4xl sm:text-6xl font-bold text-white mb-6"
-              style={{ fontFamily: "Montserrat, sans-serif" }}
-            >
-              The Future of
-              <span className="block bg-gradient-to-r from-teal-300 to-pink-300 bg-clip-text text-transparent">
-                Customer Support
-              </span>
-            </h1>
-
-            <p className="text-xl text-blue-100 max-w-3xl mx-auto mb-8" style={{ fontFamily: "Inter, sans-serif" }}>
-              Professional enterprise credibility meets warm human connection. Built on <strong>KyakuShien</strong>,
-              powered by <strong>KizunaAI</strong>.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <Button
-                size="lg"
-                className="bg-white text-blue-900 hover:bg-blue-50 font-semibold px-8 py-3"
-                onClick={() => setActiveTab("dashboard")}
-              >
-                <Shield className="h-5 w-5 mr-2" />
-                View Dashboard
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-blue-900 font-semibold px-8 py-3 bg-transparent"
-                onClick={() => setShowChatWidget(true)}
-              >
-                <Bot className="h-5 w-5 mr-2" />
-                Try KizunaAI
-              </Button>
-            </div>
-
-            <div className="mt-8 flex justify-center space-x-4 flex-wrap">
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Globe className="h-3 w-3 mr-1" />
-                Multi-language Support
-              </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Zap className="h-3 w-3 mr-1" />
-                Voice Integration
-              </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Users className="h-3 w-3 mr-1" />
-                Admin Approval System
-              </Badge>
-              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
-                <Sparkles className="h-3 w-3 mr-1" />
-                Real-time Monitoring
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4" style={{ fontFamily: "Montserrat, sans-serif" }}>
-            Complete AI Customer Support Solution
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto" style={{ fontFamily: "Inter, sans-serif" }}>
-            Experience the perfect blend of professional enterprise tools and friendly AI assistance
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="container mx-auto py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">AI Customer Support System</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Experience next-generation customer service with our AI-powered support system. Get instant help with
+            multi-language support and intelligent escalation.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Shield className="h-6 w-6 text-blue-600" />
-                <span>Enterprise Dashboard</span>
-              </CardTitle>
-              <CardDescription>Professional monitoring and analytics powered by KyakuShien</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>• Real-time conversation monitoring</li>
-                <li>• Advanced analytics and insights</li>
-                <li>• Multi-language support tracking</li>
-                <li>• System health monitoring</li>
-              </ul>
-            </CardContent>
-          </Card>
+        <EnhancedChatInterface />
 
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Bot className="h-6 w-6 text-teal-600" />
-                <span>AI Assistant</span>
-              </CardTitle>
-              <CardDescription>Friendly and intelligent support powered by KizunaAI</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>• Natural conversation in 3 languages</li>
-                <li>• Voice input and output support</li>
-                <li>• Context-aware responses</li>
-                <li>• Emotional intelligence</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Sparkles className="h-6 w-6 text-purple-600" />
-                <span>Smart Features</span>
-              </CardTitle>
-              <CardDescription>Advanced capabilities for modern customer support</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>• Auto language detection</li>
-                <li>• Admin approval workflows</li>
-                <li>• Real-time API integrations</li>
-                <li>• Comprehensive logging</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Demo Section */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <div className="flex justify-center">
-            <TabsList className="grid w-full max-w-md grid-cols-3 bg-transparent">
-              <TabsTrigger
-                value="dashboard"
-                className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-              >
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="brand" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-                Brand System
-              </TabsTrigger>
-              <TabsTrigger value="chat" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
-                Chat Demo
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="dashboard" className="space-y-4">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">KyakuShien Dashboard</h3>
-              <p className="text-gray-600">Professional monitoring and management interface</p>
+        <div className="mt-12 text-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="font-semibold text-gray-900 mb-2">Multi-Language</h3>
+              <p className="text-sm text-gray-600">English, Luganda, Swahili</p>
             </div>
-            <div className="border rounded-lg overflow-hidden shadow-xl">
-              <KyakuShienDashboard />
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="font-semibold text-gray-900 mb-2">24/7 Support</h3>
+              <p className="text-sm text-gray-600">Always available to help</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="font-semibold text-gray-900 mb-2">Smart Routing</h3>
+              <p className="text-sm text-gray-600">Automatic escalation when needed</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="font-semibold text-gray-900 mb-2">Industry Specific</h3>
+              <p className="text-sm text-gray-600">Telecom, Banking, Utilities, E-commerce</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <KyakuShienHeader
+        currentPage={currentPage}
+        onNavigate={handleNavigation}
+        showNotifications={true}
+        notificationCount={3}
+      />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-6">
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="flex items-center space-x-2">
+              <MessageSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">Chat</span>
+            </TabsTrigger>
+            <TabsTrigger value="complaints" className="flex items-center space-x-2">
+              <Zap className="h-4 w-4" />
+              <span className="hidden sm:inline">Live</span>
+            </TabsTrigger>
+            <TabsTrigger value="approvals" className="flex items-center space-x-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Approvals</span>
+            </TabsTrigger>
+            <TabsTrigger value="brand" className="flex items-center space-x-2">
+              <Bot className="h-4 w-4" />
+              <span className="hidden sm:inline">Brand</span>
+            </TabsTrigger>
+            <TabsTrigger value="demo" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Demo</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Welcome Card */}
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Shield className="h-6 w-6" style={{ color: KYAKU_SHIEN_BRAND.colors.primary }} />
+                    <span style={{ fontFamily: KYAKU_SHIEN_BRAND.typography.fontFamily.heading }}>
+                      Welcome to {KYAKU_SHIEN_BRAND.name}
+                    </span>
+                  </CardTitle>
+                  <CardDescription>{KYAKU_SHIEN_BRAND.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg">System Status</h3>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-gray-600">All systems operational</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Bot className="h-4 w-4" style={{ color: KIZUNA_AI_BRAND.colors.primary }} />
+                        <span className="text-sm text-gray-600">KizunaAI is online</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg">Quick Stats</h3>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span>Active Conversations:</span>
+                          <span className="font-medium">89</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Response Time:</span>
+                          <span className="font-medium">2.3s</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Satisfaction:</span>
+                          <span className="font-medium">4.6/5</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Badge style={{ backgroundColor: KYAKU_SHIEN_BRAND.colors.success }}>Enterprise Ready</Badge>
+                    <Badge style={{ backgroundColor: KIZUNA_AI_BRAND.colors.primary }}>AI Powered</Badge>
+                    <Badge style={{ backgroundColor: KYAKU_SHIEN_BRAND.colors.accent }}>Multi-Language</Badge>
+                    <Badge style={{ backgroundColor: KYAKU_SHIEN_BRAND.colors.warning }}>Real-time</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* KizunaAI Preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Bot className="h-5 w-5" style={{ color: KIZUNA_AI_BRAND.colors.primary }} />
+                    <span style={{ fontFamily: KIZUNA_AI_BRAND.typography.fontFamily.heading }}>
+                      Meet {KIZUNA_AI_BRAND.name}
+                    </span>
+                  </CardTitle>
+                  <CardDescription>{KIZUNA_AI_BRAND.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <div
+                        className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-3"
+                        style={{ background: KIZUNA_AI_BRAND.colors.gradient.primary }}
+                      >
+                        <div className="w-6 h-6 bg-white rounded-full animate-pulse"></div>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Your friendly AI companion ready to help customers in English, Luganda, and Swahili
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Capabilities:</h4>
+                      <ul className="text-xs text-gray-600 space-y-1">
+                        <li>• Multi-language support</li>
+                        <li>• Real-time responses</li>
+                        <li>• Context awareness</li>
+                        <li>• Escalation handling</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Dashboard Content */}
+            <KyakuShienDashboard />
+          </TabsContent>
+
+          {/* Chat Tab */}
+          <TabsContent value="chat" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Chat Interface Demo</CardTitle>
+                    <CardDescription>Experience KizunaAI in action with different business scenarios</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                      <Button
+                        variant="outline"
+                        className="h-16 flex flex-col items-center justify-center space-y-1 bg-transparent"
+                      >
+                        <Globe className="h-5 w-5" />
+                        <span className="text-sm">Telecom Support</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-16 flex flex-col items-center justify-center space-y-1 bg-transparent"
+                      >
+                        <Users className="h-5 w-5" />
+                        <span className="text-sm">Banking Support</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-16 flex flex-col items-center justify-center space-y-1 bg-transparent"
+                      >
+                        <Zap className="h-5 w-5" />
+                        <span className="text-sm">Utilities Support</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="h-16 flex flex-col items-center justify-center space-y-1 bg-transparent"
+                      >
+                        <MessageSquare className="h-5 w-5" />
+                        <span className="text-sm">E-commerce Support</span>
+                      </Button>
+                    </div>
+
+                    <div className="bg-gray-100 rounded-lg p-4 text-center">
+                      <p className="text-sm text-gray-600 mb-2">Select a business type above to start chatting</p>
+                      <Badge variant="outline">Demo Mode</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div>
+                <KizunaAIWidget
+                  businessType="telecom"
+                  position="embedded"
+                  maxHeight={600}
+                  onApprovalRequest={handleApprovalRequest}
+                />
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="brand" className="space-y-4">
+          {/* Live Complaints Tab */}
+          <TabsContent value="complaints">
+            <RealtimeComplaintsDashboard />
+          </TabsContent>
+
+          {/* Approvals Tab */}
+          <TabsContent value="approvals">
+            <AdminApprovalInterface />
+          </TabsContent>
+
+          {/* Brand Tab */}
+          <TabsContent value="brand">
             <BrandShowcase />
           </TabsContent>
 
-          <TabsContent value="chat" className="space-y-4">
-            <div className="min-h-screen bg-gray-50 py-8">
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-8">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-4">KizunaAI Chat Demo</h1>
-                  <p className="text-lg text-gray-600">Experience our intelligent customer support companion</p>
+          {/* Demo Tab */}
+          <TabsContent value="demo" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Architecture Demo</CardTitle>
+                <CardDescription>Complete customer service chatbot stack implementation</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <Shield className="h-8 w-8 mx-auto mb-2" style={{ color: KYAKU_SHIEN_BRAND.colors.primary }} />
+                      <h3 className="font-semibold">Backend</h3>
+                      <p className="text-sm text-gray-600">Vercel deployment ready</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <Bot className="h-8 w-8 mx-auto mb-2" style={{ color: KIZUNA_AI_BRAND.colors.primary }} />
+                      <h3 className="font-semibold">AI Brain</h3>
+                      <p className="text-sm text-gray-600">OpenAI & Hugging Face</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <BarChart3 className="h-8 w-8 mx-auto mb-2" style={{ color: KYAKU_SHIEN_BRAND.colors.accent }} />
+                      <h3 className="font-semibold">Database</h3>
+                      <p className="text-sm text-gray-600">Supabase integration</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <Zap className="h-8 w-8 mx-auto mb-2" style={{ color: KYAKU_SHIEN_BRAND.colors.warning }} />
+                      <h3 className="font-semibold">Automation</h3>
+                      <p className="text-sm text-gray-600">n8n workflows</p>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <div className="bg-white rounded-lg shadow-lg p-8">
-                  <KizunaAIWidget
-                    businessType="demo"
-                    position="embedded"
-                    maxHeight={600}
-                    onApprovalRequest={(request) => {
-                      console.log("Demo approval request:", request)
-                    }}
-                  />
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold mb-4">Deployment Ready Features</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">✅ Core Features</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Multi-language chat interface</li>
+                        <li>• Real-time conversation handling</li>
+                        <li>• Admin approval system</li>
+                        <li>• Live complaints dashboard</li>
+                        <li>• Brand system integration</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium">🚀 Ready for Production</h4>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Vercel deployment configuration</li>
+                        <li>• Environment variables setup</li>
+                        <li>• API routes optimized</li>
+                        <li>• Mobile responsive design</li>
+                        <li>• Error handling & fallbacks</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
 
       {/* Floating Chat Widget */}
-      {showChatWidget && (
-        <KizunaAIWidget
-          businessType="demo"
-          position="bottom-right"
-          onApprovalRequest={(request) => console.log("Approval request:", request)}
-        />
-      )}
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
-              <div className="text-4xl text-gray-600">+</div>
-              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-pink-400 rounded-xl flex items-center justify-center">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-            </div>
-
-            <h3 className="text-2xl font-bold mb-2" style={{ fontFamily: "Montserrat, sans-serif" }}>
-              KyakuShien × KizunaAI
-            </h3>
-            <p className="text-gray-400 mb-6" style={{ fontFamily: "Inter, sans-serif" }}>
-              The complete customer support solution with AI-powered assistance
-            </p>
-
-            <div className="flex justify-center space-x-4 flex-wrap mb-6">
-              <Badge variant="outline" className="border-gray-600 text-gray-300">
-                Multi-language Support
-              </Badge>
-              <Badge variant="outline" className="border-gray-600 text-gray-300">
-                Voice Integration
-              </Badge>
-              <Badge variant="outline" className="border-gray-600 text-gray-300">
-                Admin Approval System
-              </Badge>
-              <Badge variant="outline" className="border-gray-600 text-gray-300">
-                Real-time Monitoring
-              </Badge>
-            </div>
-
-            <p className="text-gray-500 text-sm">© 2024 KyakuShien. Built with ❤️ for better customer support.</p>
-          </div>
-        </div>
-      </footer>
+      <KizunaAIWidget businessType="telecom" position="bottom-right" onApprovalRequest={handleApprovalRequest} />
     </div>
   )
 }

@@ -1,312 +1,136 @@
-# 🤖 KyakuShien - Advanced AI Customer Support System
+# AI Customer Support System
 
-**Powered by KizunaAI - Your Intelligent Customer Support Companion**
+A comprehensive AI-powered customer support system with multi-language support, intelligent escalation, and multiple AI provider integration.
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/kyaku-shien/kyaku-shien)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![AI Powered](https://img.shields.io/badge/AI-Powered-purple.svg)](https://github.com/kyaku-shien/kyaku-shien)
+## Features
 
-## 🌟 Overview
+- **Multi-Language Support**: English, Luganda, and Swahili
+- **Multiple AI Providers**: OpenAI, Anthropic Claude, Google Gemini, and Groq
+- **Business Type Customization**: Telecom, Banking, Utilities, E-commerce
+- **Intelligent Escalation**: Automatic detection of complex issues
+- **Real-time Chat Interface**: Interactive chat with session management
+- **Admin Dashboard**: Comprehensive management and analytics
+- **Knowledge Base Integration**: Context-aware responses
 
-**KyakuShien** (Customer Support) is an advanced AI-powered customer support system featuring **KizunaAI** (Bond AI), an intelligent multilingual chatbot that provides seamless customer service across multiple languages and business sectors.
-
-### 🎯 Key Features
-
-- **🤖 KizunaAI Chatbot**: Intelligent AI companion with personality and context awareness
-- **🌐 Auto Language Detection**: Automatically detects English, Luganda, and Swahili
-- **🎤 Voice Integration**: Speech recognition and text-to-speech capabilities
-- **🛡️ Admin Approval System**: Secure workflow for sensitive requests
-- **📊 Real-time Dashboard**: Live monitoring and analytics
-- **🏢 Multi-Business Support**: Telecom, Banking, Utilities, E-commerce
-- **📱 Compact Widget**: Embeddable widget for existing systems
-
-## 🏗️ Architecture
-
-\`\`\`
-KyakuShien/
-├── backend/                 # Backend services and APIs
-│   ├── api/                # API routes and endpoints
-│   ├── config/             # Application configuration
-│   ├── database/           # Database schemas and migrations
-│   └── services/           # Business logic and services
-├── frontend/               # Frontend components and pages
-│   ├── components/         # React components
-│   └── pages/             # Application pages
-└── environment/           # Environment configuration
-\`\`\`
-
-## 🚀 Quick Start
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ 
-- PostgreSQL database
-- AI API keys (Google Gemini, Anthropic Claude, etc.)
+- npm or yarn
+- API keys for your chosen AI providers
 
 ### Installation
 
-1. **Clone the repository**
+1. Clone the repository:
 \`\`\`bash
-git clone https://github.com/kyaku-shien/kyaku-shien.git
-cd kyaku-shien
+git clone <repository-url>
+cd ai-customer-support
 \`\`\`
 
-2. **Install dependencies**
+2. Install dependencies:
 \`\`\`bash
 npm install
 \`\`\`
 
-3. **Set up environment variables**
+3. Set up environment variables:
 \`\`\`bash
-cp environment/.env.example environment/.env.local
+cp .env.example .env.local
 \`\`\`
 
-4. **Configure your API keys in `.env.local`**
+4. Add your API keys to `.env.local`:
 \`\`\`env
-GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key
-ANTHROPIC_API_KEY=your_anthropic_key
-DATABASE_URL=your_database_url
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 \`\`\`
 
-5. **Run database migrations**
-\`\`\`bash
-npm run db:migrate
-npm run db:seed
-\`\`\`
-
-6. **Start the development server**
+5. Run the development server:
 \`\`\`bash
 npm run dev
 \`\`\`
 
-Visit `http://localhost:3000` to see KyakuShien in action!
+6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🤖 Meet KizunaAI
+## Usage
 
-**KizunaAI** is the heart of KyakuShien - an intelligent AI companion designed to:
+### Customer Interface
 
-- **Understand Context**: Analyzes conversation history and user intent
-- **Detect Languages**: Automatically switches between English, Luganda, and Swahili
-- **Learn Preferences**: Adapts responses based on business type and user behavior
-- **Escalate Smartly**: Knows when to request human approval
-- **Provide Suggestions**: Offers helpful action suggestions to users
+1. Enter your email address
+2. Select your business type and preferred language
+3. Choose an AI provider
+4. Start chatting with the AI assistant
 
-### KizunaAI Capabilities
+### Admin Interface
 
-\`\`\`typescript
-// Example: KizunaAI detecting language and providing contextual response
-const response = await kizunaAI.chat({
-  message: "Nkwagala data bundle ya 1GB", // Luganda
-  businessType: "telecom",
-  context: conversationHistory
-})
+Visit `/admin` to access the administrative dashboard with:
+- Real-time conversation monitoring
+- System performance metrics
+- User management
+- Analytics and reporting
 
-// KizunaAI Response:
-{
-  message: "Webale! Nsobola okukuyamba ku data bundle ya 1GB...",
-  language: "luganda",
-  confidence: 0.95,
-  suggestions: ["Check balance", "Buy bundle", "View plans"],
-  needsApproval: false
-}
-\`\`\`
+## API Endpoints
 
-## 🌐 Language Support
+- `POST /api/sessions` - Create a new chat session
+- `POST /api/chat` - Send messages and receive AI responses
+- `GET /api/admin/system-status` - Get system health status
+- `GET /api/admin/conversations` - Retrieve conversation history
 
-KyakuShien supports three languages with intelligent auto-detection:
+## Deployment
 
-| Language | Code | Support Level | Local Terms |
-|----------|------|---------------|-------------|
-| English  | `en` | Full          | Standard business terms |
-| Luganda  | `lg` | Full          | sente, simu, bundles, data |
-| Swahili  | `sw` | Full          | pesa, simu, huduma, data |
+### Vercel (Recommended)
 
-## 🏢 Business Sectors
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Add environment variables in Vercel dashboard
+4. Deploy
 
-- **📱 Telecommunications**: Network issues, data bundles, airtime
-- **🏦 Banking**: Account management, transactions, loans
-- **⚡ Utilities**: Billing, outages, meter readings
-- **🛒 E-commerce**: Orders, shipping, returns
+### Manual Deployment
 
-## 🛡️ Admin Approval System
-
-KizunaAI intelligently determines when requests need human approval:
-
-### Auto-Approval ✅
-- General information requests
-- Simple account queries
-- Standard service information
-
-### Requires Approval ⚠️
-- Billing disputes
-- Account modifications
-- Technical escalations
-- Refund requests
-
-## 📊 Dashboard & Analytics
-
-The KyakuShien dashboard provides:
-
-- **Real-time Metrics**: Active conversations, response times
-- **Language Analytics**: Usage distribution by language
-- **Business Insights**: Performance by sector
-- **AI Provider Stats**: Usage across different AI models
-- **System Health**: Component status monitoring
-
-## 🎤 Voice Integration
-
-### Features
-- **Speech Recognition**: Convert voice to text
-- **Text-to-Speech**: KizunaAI speaks responses
-- **Voice Commands**: Hands-free interaction
-- **Multi-language Voice**: Supports all three languages
-
-### Integration
-\`\`\`typescript
-// Enable voice in KizunaAI widget
-<KizunaAIWidget
-  businessType="telecom"
-  voiceEnabled={true}
-  onVoiceInput={(transcript) => handleVoiceInput(transcript)}
-/>
-\`\`\`
-
-## 🔧 Configuration
-
-### App Configuration
-\`\`\`typescript
-// backend/config/app-config.ts
-export const APP_CONFIG = {
-  name: "KyakuShien",
-  chatbot: {
-    name: "KizunaAI",
-    personality: "friendly, helpful, and professional"
-  },
-  supportedLanguages: ["en", "lg", "sw"],
-  businessTypes: ["telecom", "banking", "utilities", "ecommerce"]
-}
-\`\`\`
-
-### Widget Integration
-\`\`\`html
-<!-- Embed KizunaAI in your existing system -->
-<div id="kizuna-ai-widget"></div>
-<script>
-  KizunaAI.init({
-    containerId: 'kizuna-ai-widget',
-    businessType: 'telecom',
-    position: 'bottom-right',
-    autoLanguageDetection: true
-  })
-</script>
-\`\`\`
-
-## 🚀 Deployment
-
-### Production Build
+1. Build the application:
 \`\`\`bash
 npm run build
+\`\`\`
+
+2. Start the production server:
+\`\`\`bash
 npm start
 \`\`\`
 
-### Docker Deployment
-\`\`\`bash
-docker build -t kyaku-shien .
-docker run -p 3000:3000 kyaku-shien
-\`\`\`
+## Configuration
 
-### Environment Variables
-\`\`\`env
-# Required
-GOOGLE_GENERATIVE_AI_API_KEY=your_key
-DATABASE_URL=your_database_url
+### Business Types
 
-# Optional
-ANTHROPIC_API_KEY=your_key
-GROQ_API_KEY=your_key
-ELEVENLABS_API_KEY=your_key
-VAPI_API_KEY=your_key
-\`\`\`
+The system supports different business types with customized prompts:
+- Telecommunications
+- Banking & Finance
+- Utilities
+- E-commerce
 
-## 🤝 Contributing
+### Languages
 
-We welcome contributions to KyakuShien! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Currently supported languages:
+- English (en)
+- Luganda (lg)
+- Swahili (sw)
 
-### Development Setup
-\`\`\`bash
-# Backend development
-npm run backend:dev
+### AI Providers
 
-# Frontend development  
-npm run frontend:dev
+Integrated AI providers:
+- OpenAI GPT-4
+- Anthropic Claude
+- Google Gemini
+- Groq Llama
 
-# Full stack development
-npm run dev
-\`\`\`
+## Contributing
 
-## 📝 API Documentation
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-### KizunaAI Chat API
-\`\`\`typescript
-POST /backend/api/kizuna-ai/chat
-{
-  "message": "User message",
-  "businessType": "telecom",
-  "sessionId": "session_123",
-  "userId": "user_456"
-}
-\`\`\`
+## License
 
-### Language Detection API
-\`\`\`typescript
-POST /backend/api/language/detect
-{
-  "text": "Nkwagala data bundle"
-}
-
-Response:
-{
-  "primaryLanguage": "luganda",
-  "confidence": 0.95,
-  "localTerms": ["data", "bundle"],
-  "mixedLanguage": false
-}
-\`\`\`
-
-## 📊 Performance
-
-- **Response Time**: < 500ms average
-- **Language Detection**: 95%+ accuracy
-- **Uptime**: 99.9% availability
-- **Concurrent Users**: 1000+ supported
-
-## 🔒 Security
-
-- **Data Encryption**: All data encrypted in transit and at rest
-- **API Security**: Rate limiting and authentication
-- **Privacy**: No personal data stored without consent
-- **Compliance**: GDPR and local privacy law compliant
-
-## 📞 Support
-
-- **Documentation**: [docs.kyaku-shien.com](https://docs.kyaku-shien.com)
-- **Issues**: [GitHub Issues](https://github.com/kyaku-shien/kyaku-shien/issues)
-- **Email**: support@kyaku-shien.com
-- **Discord**: [KyakuShien Community](https://discord.gg/kyaku-shien)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **AI Providers**: Google Gemini, Anthropic Claude, Groq
-- **Voice Services**: ElevenLabs, Vapi
-- **UI Framework**: Next.js, Tailwind CSS, shadcn/ui
-- **Community**: All contributors and users
-
----
-
-**Built with ❤️ by the KyakuShien Team**
-
-*Empowering businesses with intelligent customer support through KizunaAI*
+This project is licensed under the MIT License.
