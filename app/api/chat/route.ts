@@ -1,167 +1,244 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
-import { anthropic } from "@ai-sdk/anthropic"
-import { openai } from "@ai-sdk/openai"
 import { google } from "@ai-sdk/google"
-import { createGroq } from "@ai-sdk/groq"
-
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
-})
-
-interface ChatRequest {
-  sessionId: string
-  message: string
-  language: string
-  businessType: string
-  aiProvider: string
-}
-
-const getSystemPrompt = (businessType: string, language: string) => {
-  const prompts = {
-    telecom: {
-      en: "You are a helpful customer service assistant for a telecommunications company. Help customers with billing, technical issues, service plans, and general inquiries. Be professional, empathetic, and solution-focused.",
-      lg: "Oli omuyambi w'abakasitoma ku kkampuni y'essimu. Yamba abakasitoma ku nsonga za ssente, ebizibu by'ekikugu, enteekateeka z'obuweereza, n'ebibuuzo ebirala. Beera wa buvunaanyizibwa, okusaasira, era weekolere ku migaso.",
-      sw: "Wewe ni msaidizi wa huduma kwa wateja kwa kampuni ya mawasiliano. Saidia wateja na malipo, matatizo ya kiufundi, mipango ya huduma, na maswali ya jumla. Kuwa wa kitaalamu, wa huruma, na wa kulenga suluhu.",
-    },
-    banking: {
-      en: "You are a customer service representative for a bank. Assist customers with account inquiries, transactions, loans, and financial services. Maintain confidentiality and provide accurate information.",
-      lg: "Oli omukozi w'obuweereza bw'abakasitoma mu bbanka. Yamba abakasitoma ku bibuuzo ku akawunti, okukola ebintu ku ssente, looni, n'obuweereza bw'ebyensimbi. Kuuma ebyama era owa amawulire amatuufu.",
-      sw: "Wewe ni mwakilishi wa huduma kwa wateja kwa benki. Saidia wateja na maswali ya akaunti, miamala, mikopo, na huduma za kifedha. Hifadhi usiri na toa habari sahihi.",
-    },
-    utilities: {
-      en: "You are a customer service agent for a utilities company. Help customers with billing, service outages, meter readings, and service connections. Be helpful and provide clear information.",
-      lg: "Oli omukozi w'obuweereza bw'abakasitoma mu kkampuni y'amasanyalaze. Yamba abakasitoma ku nsonga za ssente, okuggwaawo kw'obuweereza, okusoma mita, n'okukwataganya obuweereza. Beera muyambi era owa amawulire agategeerekeka.",
-      sw: "Wewe ni wakala wa huduma kwa wateja kwa kampuni ya huduma za umma. Saidia wateja na malipo, kukatika kwa huduma, kusoma mita, na miunganisho ya huduma. Kuwa wa kusaidia na kutoa habari wazi.",
-    },
-    ecommerce: {
-      en: "You are a customer support representative for an e-commerce platform. Assist customers with orders, returns, payments, and product inquiries. Be friendly and solution-oriented.",
-      lg: "Oli omukozi w'obuweereza bw'abakasitoma ku mukutu gw'okuguza ku yintaneeti. Yamba abakasitoma ku biragiro, okuddiza, okusasula, n'ebibuuzo ku bintu. Beera mukwano era weekolere ku migaso.",
-      sw: "Wewe ni mwakilishi wa msaada wa wateja kwa jukwaa la biashara ya kielektroniki. Saidia wateja na maagizo, kurudi, malipo, na maswali ya bidhaa. Kuwa wa kirafiki na wa kulenga suluhu.",
-    },
-  }
-
-  const businessPrompts = prompts[businessType as keyof typeof prompts] || prompts.telecom
-  return businessPrompts[language as keyof typeof businessPrompts] || businessPrompts.en
-}
-
-const detectEscalation = (message: string): boolean => {
-  const escalationKeywords = [
-    "manager",
-    "supervisor",
-    "complaint",
-    "angry",
-    "frustrated",
-    "cancel",
-    "refund",
-    "legal",
-    "lawyer",
-    "sue",
-    "terrible",
-    "worst",
-    "hate",
-    "never again",
-    "omukulu",
-    "okwemulugunya",
-    "nsunguwaze",
-    "sente zange",
-    "nkwatako",
-    "meneja",
-    "msimamizi",
-    "malalamiko",
-    "hasira",
-    "sitaki",
-    "rudisha pesa",
-  ]
-
-  return escalationKeywords.some((keyword) => message.toLowerCase().includes(keyword.toLowerCase()))
-}
+import { anthropic } from "@ai-sdk/anthropic"
+import { dbHelpers } from "@/lib/supabase"
+import { n8nIntegration } from "@/lib/n8n-integration"
+import { isServiceAvailable } from "@/lib/api-keys"
 
 export async function POST(request: NextRequest) {
   try {
-    const body: ChatRequest = await request.json()
-    const { sessionId, message, language, businessType, aiProvider } = body
+    const {
+      sessionId,
+      message,
+      language = "en",
+      businessType = "general",
+      aiProvider = "google",
+      conversationHistory = [],
+    } = await request.json()
 
     if (!sessionId || !message) {
       return NextResponse.json({ error: "Session ID and message are required" }, { status: 400 })
     }
 
-    const systemPrompt = getSystemPrompt(businessType, language)
-    const shouldEscalate = detectEscalation(message)
-
-    // Select AI model based on provider
-    let model
-    switch (aiProvider) {
-      case "openai":
-        if (!process.env.OPENAI_API_KEY) {
-          throw new Error("OpenAI API key not configured")
-        }
-        model = openai("gpt-4o-mini")
-        break
-      case "google":
-        if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-          throw new Error("Google API key not configured")
-        }
-        model = google("gemini-1.5-flash")
-        break
-      case "groq":
-        if (!process.env.GROQ_API_KEY) {
-          throw new Error("Groq API key not configured")
-        }
-        model = groq("llama-3.1-8b-instant")
-        break
-      case "anthropic":
-      default:
-        if (!process.env.ANTHROPIC_API_KEY) {
-          throw new Error("Anthropic API key not configured")
-        }
-        model = anthropic("claude-3-haiku-20240307")
-        break
+    // Get session details
+    const session = await dbHelpers.getSession(sessionId)
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 })
     }
 
-    const { text } = await generateText({
-      model,
-      system: systemPrompt,
-      prompt: message,
-      maxTokens: 500,
-    })
+    // Detect if this is a complaint or escalation
+    const escalationType = n8nIntegration.detectEscalationType(message)
+    const priority = n8nIntegration.detectPriority(message)
+    const shouldEscalate = escalationType === "complaint" || priority === "critical"
 
-    const response = {
-      response: text,
-      sessionId,
-      escalated: shouldEscalate,
-      detectedLanguage: language,
-      provider: aiProvider,
-      timestamp: new Date().toISOString(),
+    // Generate AI response
+    let aiResponse = ""
+    let actualProvider = aiProvider
+    const detectedLanguage = language
+
+    try {
+      // Try the requested AI provider
+      aiResponse = await generateAIResponse(message, language, businessType, aiProvider, conversationHistory)
+    } catch (error) {
+      console.error(`${aiProvider} failed, trying fallback:`, error)
+
+      // Try fallback providers
+      if (aiProvider !== "google" && isServiceAvailable("GOOGLE")) {
+        try {
+          aiResponse = await generateAIResponse(message, language, businessType, "google", conversationHistory)
+          actualProvider = "google"
+        } catch (fallbackError) {
+          console.error("Google fallback failed:", fallbackError)
+        }
+      }
+
+      // Final fallback to mock response
+      if (!aiResponse) {
+        aiResponse = generateMockResponse(message, language, businessType)
+        actualProvider = "mock"
+      }
     }
 
-    console.log("Chat response:", response)
+    // Handle escalation if needed
+    let escalationResult = null
+    if (shouldEscalate) {
+      try {
+        escalationResult = await n8nIntegration.sendEscalation({
+          agentId: n8nIntegration.getAgentId(),
+          sessionId,
+          userId: session.user_id,
+          email: session.email,
+          businessType,
+          language,
+          escalationType,
+          priority,
+          customerMessage: message,
+          aiResponse,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            originalProvider: aiProvider,
+            actualProvider,
+            detectedLanguage,
+          },
+        })
 
-    return NextResponse.json(response)
-  } catch (error) {
-    console.error("Chat error:", error)
+        if (escalationResult.success) {
+          // Update session status
+          await dbHelpers.updateSession(sessionId, { status: "escalated" })
 
-    // Fallback response
-    const fallbackResponses = {
-      en: "I apologize, but I'm experiencing technical difficulties. Please try again in a moment or contact our support team directly.",
-      lg: "Nsonyiwa, ndi mu buzibu bw'ekikugu. Ddamu okugezaako oluvannyuma oba weekwatagane n'ekibiina kyaffe eky'obuyambi butereevu.",
-      sw: "Naomba radhi, lakini nina matatizo ya kiufundi. Tafadhali jaribu tena baada ya muda au wasiliana na timu yetu ya msaada moja kwa moja.",
+          // Create support ticket
+          await dbHelpers.createTicket({
+            session_id: sessionId,
+            user_id: session.user_id,
+            title: `${escalationType.charAt(0).toUpperCase() + escalationType.slice(1)} - ${businessType}`,
+            description: `Customer message: "${message}"\n\nAI Response: "${aiResponse}"`,
+            priority,
+            status: "open",
+          })
+        }
+      } catch (escalationError) {
+        console.error("Escalation failed:", escalationError)
+      }
     }
-
-    const fallbackMessage = fallbackResponses[language as keyof typeof fallbackResponses] || fallbackResponses.en
 
     return NextResponse.json({
-      response: fallbackMessage,
-      sessionId: "unknown",
-      escalated: true,
-      detectedLanguage: language || "en",
-      provider: aiProvider || "anthropic",
+      response: aiResponse,
+      aiProvider: actualProvider,
+      detectedLanguage,
+      escalated: shouldEscalate,
+      escalationType: shouldEscalate ? escalationType : null,
+      priority: shouldEscalate ? priority : null,
+      escalationResult,
       timestamp: new Date().toISOString(),
-      error: true,
     })
+  } catch (error) {
+    console.error("Chat API error:", error)
+    return NextResponse.json(
+      {
+        error: "Failed to process message",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    )
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ message: "Chat API is working" })
+async function generateAIResponse(
+  message: string,
+  language: string,
+  businessType: string,
+  provider: string,
+  conversationHistory: any[],
+): Promise<string> {
+  const systemPrompt = getSystemPrompt(language, businessType)
+  const contextMessages = conversationHistory.slice(-5).map((msg) => ({
+    role: msg.role,
+    content: msg.content,
+  }))
+
+  let model: any
+
+  switch (provider) {
+    case "google":
+      if (!isServiceAvailable("GOOGLE")) throw new Error("Google AI not available")
+      model = google("gemini-1.5-flash")
+      break
+    case "anthropic":
+      if (!isServiceAvailable("ANTHROPIC")) throw new Error("Anthropic not available")
+      model = anthropic("claude-3-haiku-20240307")
+      break
+    default:
+      throw new Error(`Unsupported provider: ${provider}`)
+  }
+
+  const { text } = await generateText({
+    model,
+    system: systemPrompt,
+    messages: [...contextMessages, { role: "user", content: message }],
+    maxTokens: 500,
+    temperature: 0.7,
+  })
+
+  return text
+}
+
+function generateMockResponse(message: string, language: string, businessType: string): string {
+  const lowerMessage = message.toLowerCase()
+
+  // Mock responses based on language
+  const responses = {
+    en: {
+      greeting: "Hello! I'm here to help you with your inquiry.",
+      complaint:
+        "I understand your frustration. Let me escalate this to our human support team who can better assist you.",
+      technical:
+        "I see you're experiencing a technical issue. Our technical team will be notified to help resolve this.",
+      billing: "I understand you have a billing concern. Let me connect you with our billing department.",
+      general: "Thank you for your message. I'm here to help you with any questions or concerns you may have.",
+    },
+    lg: {
+      greeting: "Oli otya! Ndi wano okukuyamba n'ekibuuzo kyo.",
+      complaint: "Ntegeera obusungu bwo. Ka nkutwale eri abantu baffe abakulu abayinza okukuyamba obulungi.",
+      technical: "Ndabye nti olina obuzibu bw'ekikugu. Ttiimu yaffe ey'ekikugu ejja kutegeezebwa okukuyamba.",
+      billing: "Ntegeera nti olina ekibuuzo ku nsimbi. Ka nkutuuse ku ttiimu yaffe ey'ensimbi.",
+      general: "Webale obubaka bwo. Ndi wano okukuyamba mu bibuuzo byonna.",
+    },
+    sw: {
+      greeting: "Hujambo! Nipo hapa kukusaidia na swali lako.",
+      complaint:
+        "Naelewa hasira yako. Hebu nikupeleke kwa timu yetu ya binadamu ambao wanaweza kukusaidia vizuri zaidi.",
+      technical: "Naona una tatizo la kiufundi. Timu yetu ya kiufundi itajulishwa kukusaidia kutatua hili.",
+      billing: "Naelewa una wasiwasi wa malipo. Hebu nikuunganishe na idara yetu ya malipo.",
+      general: "Asante kwa ujumbe wako. Nipo hapa kukusaidia na maswali yoyote au wasiwasi.",
+    },
+  }
+
+  const langResponses = responses[language as keyof typeof responses] || responses.en
+
+  if (
+    lowerMessage.includes("hello") ||
+    lowerMessage.includes("hi") ||
+    lowerMessage.includes("hujambo") ||
+    lowerMessage.includes("oli otya")
+  ) {
+    return langResponses.greeting
+  }
+
+  if (lowerMessage.includes("complaint") || lowerMessage.includes("angry") || lowerMessage.includes("terrible")) {
+    return langResponses.complaint
+  }
+
+  if (lowerMessage.includes("not working") || lowerMessage.includes("broken") || lowerMessage.includes("error")) {
+    return langResponses.technical
+  }
+
+  if (lowerMessage.includes("bill") || lowerMessage.includes("payment") || lowerMessage.includes("money")) {
+    return langResponses.billing
+  }
+
+  return langResponses.general
+}
+
+function getSystemPrompt(language: string, businessType: string): string {
+  const businessContext = {
+    telecom: "telecommunications and mobile services",
+    banking: "banking and financial services",
+    utilities: "utilities and energy services",
+    ecommerce: "e-commerce and online shopping",
+    general: "general customer support",
+  }
+
+  const context = businessContext[businessType as keyof typeof businessContext] || businessContext.general
+
+  switch (language) {
+    case "lg":
+      return `Oli omuyambi wa AI mu ${context}. Oyamba abakasitoma mu Luganda. Bw'oba olaba nti omukasitoma alina obuzibu obunene oba okwemulugunya, gamba nti ojja kubatwala eri abantu abakulu. Kozesa empuliziganya ennungi era osanyuke.`
+
+    case "sw":
+      return `Wewe ni msaidizi wa AI katika ${context}. Unasaidia wateja kwa Kiswahili. Ikiwa unaona kwamba mteja ana tatizo kubwa au malalamiko, sema utampeleka kwa timu ya binadamu. Tumia lugha nzuri na uwe mpole.`
+
+    default:
+      return `You are an AI customer service assistant for ${context}. You help customers in English. If you detect that a customer has a serious issue or complaint, mention that you'll escalate to human support. Be helpful, polite, and professional in all interactions.`
+  }
 }

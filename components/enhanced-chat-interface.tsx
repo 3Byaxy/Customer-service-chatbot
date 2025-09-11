@@ -1,14 +1,18 @@
 "use client"
 
+import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { Send, Bot, User, Loader2 } from "lucide-react"
+import { Send, Bot, User, Globe, Building2, Zap, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
+import { isServiceAvailable } from "@/lib/api-keys"
+import { dbHelpers, type ChatSession } from "@/lib/supabase"
+import { VoiceManager } from "@/lib/voice-integration"
 
 interface Message {
   id: string
@@ -16,32 +20,74 @@ interface Message {
   role: "user" | "assistant"
   timestamp: Date
   language?: string
+  escalated?: boolean
+  aiProvider?: string
 }
 
-interface Session {
-  id: string
-  email: string
-  businessType: string
-  language: string
-  aiProvider: string
-  status: "active" | "escalated" | "completed"
-  createdAt: Date
+const languages = [
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "lg", name: "Luganda", flag: "🇺🇬" },
+  { code: "sw", name: "Swahili", flag: "🇰🇪" },
+]
+
+const businessTypes = [
+  { id: "telecom", name: "Telecommunications", icon: "📱" },
+  { id: "banking", name: "Banking & Finance", icon: "🏦" },
+  { id: "utilities", name: "Utilities", icon: "⚡" },
+  { id: "ecommerce", name: "E-commerce", icon: "🛒" },
+  { id: "general", name: "General Support", icon: "💬" },
+]
+
+const getAvailableProviders = () => {
+  const providers = []
+
+  if (isServiceAvailable("GEMINI")) {
+    providers.push({ id: "google", name: "Google Gemini", icon: "✨", status: "free" })
+  }
+
+  if (isServiceAvailable("GROQ")) {
+    providers.push({ id: "groq", name: "Groq Llama", icon: "⚡", status: "free" })
+  }
+
+  if (isServiceAvailable("ANTHROPIC")) {
+    providers.push({ id: "anthropic", name: "Anthropic Claude", icon: "🤖", status: "premium" })
+  }
+
+  if (isServiceAvailable("OPENAI")) {
+    providers.push({ id: "openai", name: "OpenAI GPT", icon: "🧠", status: "premium" })
+  }
+
+  if (providers.length === 0) {
+    providers.push({ id: "mock", name: "Demo AI", icon: "🎭", status: "demo" })
+  }
+
+  return providers
 }
 
 function EnhancedChatInterface() {
-  const [session, setSession] = useState<Session | null>(null)
+  const [session, setSession] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Session setup form
+  // Configuration
   const [email, setEmail] = useState("")
-  const [businessType, setBusinessType] = useState("")
   const [language, setLanguage] = useState("en")
-  const [aiProvider, setAiProvider] = useState("anthropic")
+  const [businessType, setBusinessType] = useState("general")
+  const [aiProvider, setAiProvider] = useState(() => {
+    const providers = getAvailableProviders()
+    return providers[0]?.id || "mock"
+  })
+
+  // Voice features
+  const [voiceManager, setVoiceManager] = useState<VoiceManager | null>(null)
+  const [isListening, setIsListening] = useState(false)
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const availableProviders = getAvailableProviders()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -51,38 +97,72 @@ function EnhancedChatInterface() {
     scrollToBottom()
   }, [messages])
 
-  const createSession = async () => {
-    if (!email || !businessType) return
+  useEffect(() => {
+    if (voiceEnabled && !voiceManager) {
+      const vm = new VoiceManager({
+        enabled: true,
+        provider: isServiceAvailable("ELEVENLABS") ? "elevenlabs" : "browser",
+        language: language,
+      })
+      setVoiceManager(vm)
+    } else if (voiceManager) {
+      voiceManager.updateConfig({ language })
+    }
+  }, [voiceEnabled, language, voiceManager])
 
-    setIsLoading(true)
+  const initializeSession = async () => {
+    if (!email) return
+
     try {
-      const response = await fetch("/api/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      setIsLoading(true)
+
+      let user = await dbHelpers.getUserByEmail(email)
+      if (!user) {
+        user = await dbHelpers.createUser({
           email,
-          businessType,
-          language,
-          aiProvider,
-        }),
+          preferred_language: language,
+          business_type: businessType,
+        })
+      }
+
+      const sessionData = await dbHelpers.createSession({
+        user_id: user.id,
+        email,
+        business_type: businessType,
+        language,
+        ai_provider: aiProvider,
+        status: "active",
+        metadata: {
+          user_agent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          voice_enabled: voiceEnabled,
+        },
       })
 
-      if (response.ok) {
-        const newSession = await response.json()
-        setSession(newSession)
+      setSession(sessionData)
+      setIsInitialized(true)
 
-        // Add welcome message
-        const welcomeMessage: Message = {
-          id: "welcome",
-          content: getWelcomeMessage(language, businessType),
-          role: "assistant",
-          timestamp: new Date(),
-          language,
-        }
-        setMessages([welcomeMessage])
+      const welcomeMessage: Message = {
+        id: "welcome",
+        content: getWelcomeMessage(language, businessType),
+        role: "assistant",
+        timestamp: new Date(),
+        language,
+        aiProvider,
       }
+
+      setMessages([welcomeMessage])
+
+      await dbHelpers.createMessage({
+        session_id: sessionData.id,
+        role: "assistant",
+        content: welcomeMessage.content,
+        language,
+        ai_provider: aiProvider,
+        metadata: { type: "welcome" },
+      })
     } catch (error) {
-      console.error("Failed to create session:", error)
+      console.error("Failed to initialize session:", error)
     } finally {
       setIsLoading(false)
     }
@@ -96,23 +176,32 @@ function EnhancedChatInterface() {
       content: inputMessage,
       role: "user",
       timestamp: new Date(),
+      language,
     }
 
     setMessages((prev) => [...prev, userMessage])
     setInputMessage("")
     setIsLoading(true)
-    setIsTyping(true)
 
     try {
+      await dbHelpers.createMessage({
+        session_id: session.id,
+        role: "user",
+        content: userMessage.content,
+        language,
+        metadata: { timestamp: userMessage.timestamp.toISOString() },
+      })
+
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: session.id,
           message: inputMessage,
-          language: session.language,
-          businessType: session.businessType,
-          aiProvider: session.aiProvider,
+          language,
+          businessType,
+          aiProvider,
+          conversationHistory: messages.slice(-10),
         }),
       })
 
@@ -120,42 +209,151 @@ function EnhancedChatInterface() {
         const data = await response.json()
 
         const assistantMessage: Message = {
-          id: Date.now().toString() + "_assistant",
+          id: (Date.now() + 1).toString(),
           content: data.response,
           role: "assistant",
           timestamp: new Date(),
-          language: data.detectedLanguage || session.language,
+          language: data.detectedLanguage || language,
+          escalated: data.escalated,
+          aiProvider: data.aiProvider,
         }
 
         setMessages((prev) => [...prev, assistantMessage])
 
-        // Update session status if escalated
-        if (data.escalated) {
-          setSession((prev) => (prev ? { ...prev, status: "escalated" } : null))
+        await dbHelpers.createMessage({
+          session_id: session.id,
+          role: "assistant",
+          content: assistantMessage.content,
+          language: assistantMessage.language,
+          ai_provider: assistantMessage.aiProvider,
+          escalated: assistantMessage.escalated,
+          metadata: {
+            timestamp: assistantMessage.timestamp.toISOString(),
+            escalated: assistantMessage.escalated,
+          },
+        })
+
+        if (data.escalated && session.status !== "escalated") {
+          const updatedSession = await dbHelpers.updateSession(session.id, {
+            status: "escalated",
+          })
+          setSession(updatedSession)
+
+          await dbHelpers.createTicket({
+            session_id: session.id,
+            user_id: session.user_id,
+            title: `Escalated Issue - ${businessType}`,
+            description: `Customer message: "${inputMessage}"\nAI Response: "${data.response}"`,
+            priority: "medium",
+            status: "open",
+          })
         }
+
+        if (voiceEnabled && voiceManager && assistantMessage.content) {
+          speakText(assistantMessage.content)
+        }
+      } else {
+        throw new Error("Failed to get response")
       }
     } catch (error) {
-      console.error("Failed to send message:", error)
+      console.error("Error sending message:", error)
+
       const errorMessage: Message = {
-        id: Date.now().toString() + "_error",
-        content: "Sorry, I encountered an error. Please try again.",
+        id: (Date.now() + 1).toString(),
+        content: getErrorMessage(language),
         role: "assistant",
         timestamp: new Date(),
+        language,
       }
+
       setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
-      setIsTyping(false)
+    }
+  }
+
+  const speakText = async (text: string) => {
+    if (!voiceManager) return
+
+    try {
+      setIsSpeaking(true)
+      await voiceManager.speak(
+        text,
+        () => setIsSpeaking(true),
+        () => setIsSpeaking(false),
+        (error) => {
+          console.error("TTS error:", error)
+          setIsSpeaking(false)
+        },
+      )
+    } catch (error) {
+      console.error("TTS error:", error)
+      setIsSpeaking(false)
+    }
+  }
+
+  const startListening = () => {
+    if (!voiceManager) {
+      alert("Voice manager not initialized")
+      return
+    }
+
+    setIsListening(true)
+    voiceManager.startListening(
+      (text) => {
+        setInputMessage(text)
+        setIsListening(false)
+      },
+      (error) => {
+        console.error("Speech recognition error:", error)
+        setIsListening(false)
+      },
+    )
+  }
+
+  const stopListening = () => {
+    if (voiceManager) {
+      voiceManager.stopListening()
+    }
+    setIsListening(false)
+  }
+
+  const stopSpeaking = () => {
+    if (voiceManager) {
+      voiceManager.stopSpeaking()
+    }
+    setIsSpeaking(false)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
     }
   }
 
   const getWelcomeMessage = (lang: string, business: string) => {
-    const messages = {
-      en: `Hello! I'm your AI assistant for ${business} support. How can I help you today?`,
-      lg: `Nkulamusizza! Ndi omuyambi wo ku nsonga za ${business}. Nkuyinza kutya okukuyamba leero?`,
-      sw: `Hujambo! Mimi ni msaidizi wako wa AI kwa huduma za ${business}. Ninaweza kukusaidiaje leo?`,
+    const businessName = businessTypes.find((b) => b.id === business)?.name || "Support"
+
+    switch (lang) {
+      case "lg":
+        return `Oli otya! Nze AI omuyambi wa ${businessName}. Nsobola kutya okukuyamba leero?`
+      case "sw":
+        return `Hujambo! Mimi ni msaidizi wa AI wa ${businessName}. Ninaweza kukusaidia vipi leo?`
+      default:
+        return `Hello! I'm your AI assistant for ${businessName}. How can I help you today?`
     }
-    return messages[lang as keyof typeof messages] || messages.en
+  }
+
+  const getErrorMessage = (lang: string) => {
+    switch (lang) {
+      case "lg":
+        return "Nsonyiwa, waliwo obuzibu. Mukuume mugezeeko."
+      case "sw":
+        return "Samahani, kuna tatizo. Tafadhali jaribu tena."
+      default:
+        return "Sorry, there was an error. Please try again."
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -164,173 +362,288 @@ function EnhancedChatInterface() {
         return "bg-green-500"
       case "escalated":
         return "bg-yellow-500"
-      case "completed":
+      case "resolved":
         return "bg-blue-500"
       default:
         return "bg-gray-500"
     }
   }
 
-  if (!session) {
+  if (!isInitialized) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Start Your Support Session</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-              />
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center flex items-center justify-center gap-2">
+                <Bot className="h-6 w-6 text-blue-600" />
+                AI Customer Support
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Email Address</label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="business">Business Type</Label>
-              <Select value={businessType} onValueChange={setBusinessType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your business type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="telecom">Telecommunications</SelectItem>
-                  <SelectItem value="banking">Banking & Finance</SelectItem>
-                  <SelectItem value="utilities">Utilities</SelectItem>
-                  <SelectItem value="ecommerce">E-commerce</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Language</label>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <span className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          {lang.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="language">Preferred Language</Label>
-              <Select value={language} onValueChange={setLanguage}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="lg">Luganda</SelectItem>
-                  <SelectItem value="sw">Swahili</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Business Type</label>
+                <Select value={businessType} onValueChange={setBusinessType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {businessTypes.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        <span className="flex items-center gap-2">
+                          <span>{business.icon}</span>
+                          {business.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="provider">AI Provider</Label>
-              <Select value={aiProvider} onValueChange={setAiProvider}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="anthropic">Anthropic Claude</SelectItem>
-                  <SelectItem value="openai">OpenAI GPT-4</SelectItem>
-                  <SelectItem value="google">Google Gemini</SelectItem>
-                  <SelectItem value="groq">Groq Llama</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">AI Provider</label>
+                <Select value={aiProvider} onValueChange={setAiProvider}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableProviders.map((provider) => (
+                      <SelectItem key={provider.id} value={provider.id}>
+                        <span className="flex items-center gap-2">
+                          <span>{provider.icon}</span>
+                          {provider.name}
+                          <Badge
+                            variant={
+                              provider.status === "free"
+                                ? "default"
+                                : provider.status === "premium"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                          >
+                            {provider.status}
+                          </Badge>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <Button onClick={createSession} disabled={!email || !businessType || isLoading} className="w-full">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Session...
-                </>
-              ) : (
-                "Start Chat Session"
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="voice"
+                  checked={voiceEnabled}
+                  onChange={(e) => setVoiceEnabled(e.target.checked)}
+                />
+                <label htmlFor="voice" className="text-sm">
+                  Enable voice features
+                </label>
+              </div>
+
+              <Button onClick={initializeSession} disabled={!email || isLoading} className="w-full">
+                {isLoading ? "Starting Session..." : "Start Chat Session"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Card className="h-[600px] flex flex-col">
-        <CardHeader className="flex-shrink-0">
-          <div className="flex justify-between items-center">
-            <CardTitle>AI Support Chat</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{session.businessType}</Badge>
-              <Badge variant="outline">{session.language.toUpperCase()}</Badge>
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(session.status)}`} />
-              <span className="text-sm text-muted-foreground capitalize">{session.status}</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Session Info */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-blue-600" />
+                <span className="font-medium">AI Support Chat</span>
+                {voiceEnabled && (
+                  <Badge variant="outline" className="text-xs">
+                    <Volume2 className="h-3 w-3 mr-1" />
+                    Voice Enabled
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">
+                  <Globe className="h-3 w-3 mr-1" />
+                  {languages.find((l) => l.code === language)?.name}
+                </Badge>
+                <Badge variant="outline">
+                  <Building2 className="h-3 w-3 mr-1" />
+                  {businessTypes.find((b) => b.id === businessType)?.name}
+                </Badge>
+                <div className={`w-3 h-3 rounded-full ${getStatusColor(session?.status || "active")}`} />
+                <span className="text-sm text-muted-foreground capitalize">{session?.status || "active"}</span>
+              </div>
             </div>
-          </div>
-        </CardHeader>
+          </CardContent>
+        </Card>
 
-        <CardContent className="flex-1 flex flex-col p-0">
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex items-start gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
-                >
+        {/* Chat Interface */}
+        <Card className="h-[600px] flex flex-col">
+          <CardContent className="flex-1 flex flex-col p-0">
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messages.map((message) => (
                   <div
-                    className={`p-2 rounded-full ${
-                      message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"
+                    key={message.id}
+                    className={`flex gap-3 message-fade-in ${
+                      message.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {message.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
-                  </div>
-                  <div
-                    className={`max-w-[80%] p-3 rounded-lg ${
-                      message.role === "user" ? "bg-blue-500 text-white ml-auto" : "bg-gray-100 text-gray-900"
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <span className="text-xs opacity-70 mt-1 block">{message.timestamp.toLocaleTimeString()}</span>
-                  </div>
-                </div>
-              ))}
+                    {message.role === "assistant" && (
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                          <Bot className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                    )}
 
-              {isTyping && (
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-full bg-gray-200 text-gray-700">
-                    <Bot className="h-4 w-4" />
+                    <div
+                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                        message.role === "user" ? "bg-blue-600 text-white ml-auto" : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`text-xs ${message.role === "user" ? "text-blue-100" : "text-gray-500"}`}>
+                          {message.timestamp.toLocaleTimeString()}
+                        </span>
+                        {message.escalated && (
+                          <Badge variant="destructive" className="text-xs">
+                            <Zap className="h-3 w-3 mr-1" />
+                            Escalated
+                          </Badge>
+                        )}
+                        {message.aiProvider && (
+                          <Badge variant="outline" className="text-xs">
+                            {availableProviders.find((p) => p.id === message.aiProvider)?.name}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {message.role === "user" && (
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-white" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-gray-100 p-3 rounded-lg">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                      <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      />
+                ))}
+
+                {isLoading && (
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <Bot className="h-4 w-4 text-white animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="bg-gray-100 rounded-lg px-4 py-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-            <div ref={messagesEndRef} />
-          </ScrollArea>
+                )}
+              </div>
+              <div ref={messagesEndRef} />
+            </ScrollArea>
 
-          <div className="p-4 border-t">
-            <div className="flex gap-2">
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your message..."
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                disabled={isLoading}
-              />
-              <Button onClick={sendMessage} disabled={isLoading || !inputMessage.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              </Button>
+            {/* Input Area */}
+            <div className="border-t p-4">
+              <div className="flex gap-2">
+                <Textarea
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={
+                    language === "lg"
+                      ? "Wandiika obubaka bwo..."
+                      : language === "sw"
+                        ? "Andika ujumbe wako..."
+                        : "Type your message..."
+                  }
+                  disabled={isLoading}
+                  className="flex-1 min-h-[40px] max-h-[120px] resize-none"
+                  rows={1}
+                />
+
+                {voiceEnabled && (
+                  <>
+                    <Button
+                      onClick={isListening ? stopListening : startListening}
+                      disabled={isLoading}
+                      variant="outline"
+                      size="icon"
+                    >
+                      {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+
+                    <Button
+                      onClick={isSpeaking ? stopSpeaking : () => {}}
+                      disabled={isLoading || !isSpeaking}
+                      variant="outline"
+                      size="icon"
+                    >
+                      {isSpeaking ? <VolumeX className="h-4 w-4 text-red-500" /> : <Volume2 className="h-4 w-4" />}
+                    </Button>
+                  </>
+                )}
+
+                <Button onClick={sendMessage} disabled={isLoading || !inputMessage.trim()} size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

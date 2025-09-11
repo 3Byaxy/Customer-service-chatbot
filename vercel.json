@@ -1,17 +1,24 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
   "functions": {
-    "app/api/**/*.ts": {
+    "app/api/chat/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/tts/route.ts": {
+      "maxDuration": 20
+    },
+    "app/api/sessions/route.ts": {
+      "maxDuration": 10
     }
   },
   "env": {
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "OPENAI_API_KEY": "@openai_api_key",
-    "GOOGLE_GENERATIVE_AI_API_KEY": "@google_api_key",
-    "GROQ_API_KEY": "@groq_api_key"
+    "GOOGLE_GENERATIVE_AI_API_KEY": "@google_ai_key",
+    "GROQ_API_KEY": "@groq_key",
+    "ANTHROPIC_API_KEY": "@anthropic_key",
+    "OPENAI_API_KEY": "@openai_key",
+    "ELEVENLABS_API_KEY": "@elevenlabs_key",
+    "VOICEFLOW_API_KEY": "@voiceflow_key",
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "DATABASE_URL": "@database_url"
   }
 }

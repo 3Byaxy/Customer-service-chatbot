@@ -1,44 +1,71 @@
 import { type NextRequest, NextResponse } from "next/server"
-
-interface SessionRequest {
-  email: string
-  businessType: string
-  language: string
-  aiProvider: string
-}
+import { dbHelpers } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
-    const body: SessionRequest = await request.json()
-    const { email, businessType, language, aiProvider } = body
+    const { email, businessType, language, aiProvider } = await request.json()
 
-    // Validate required fields
-    if (!email || !businessType) {
-      return NextResponse.json({ error: "Email and business type are required" }, { status: 400 })
+    if (!email || !businessType || !language || !aiProvider) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Create session object
-    const session = {
-      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Create or get user
+    let user = await dbHelpers.getUserByEmail(email)
+    if (!user) {
+      user = await dbHelpers.createUser({
+        email,
+        preferred_language: language,
+        business_type: businessType,
+      })
+    }
+
+    // Create session
+    const session = await dbHelpers.createSession({
+      user_id: user.id,
       email,
+      business_type: businessType,
+      language,
+      ai_provider: aiProvider,
+      status: "active",
+      metadata: {
+        user_agent: request.headers.get("user-agent"),
+        ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+        timestamp: new Date().toISOString(),
+      },
+    })
+
+    return NextResponse.json({
+      sessionId: session.id,
+      userId: user.id,
       businessType,
-      language: language || "en",
-      aiProvider: aiProvider || "anthropic",
-      status: "active" as const,
-      createdAt: new Date(),
-    }
-
-    // In a real app, you would save this to a database
-    // For now, we'll just return the session
-    console.log("Created session:", session)
-
-    return NextResponse.json(session)
+      language,
+      aiProvider,
+      status: "active",
+    })
   } catch (error) {
     console.error("Session creation error:", error)
     return NextResponse.json({ error: "Failed to create session" }, { status: 500 })
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ message: "Sessions API is working" })
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const sessionId = searchParams.get("sessionId")
+
+  if (!sessionId) {
+    return NextResponse.json({ error: "Session ID required" }, { status: 400 })
+  }
+
+  try {
+    const session = await dbHelpers.getSession(sessionId)
+    const messages = await dbHelpers.getMessages(sessionId)
+
+    return NextResponse.json({
+      session,
+      messages,
+    })
+  } catch (error) {
+    console.error("Session retrieval error:", error)
+    return NextResponse.json({ error: "Failed to retrieve session" }, { status: 500 })
+  }
 }
