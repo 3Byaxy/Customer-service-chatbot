@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     const { message } = await req.json()
 
     // Use the provided API key
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyD_kvtPIA2IiE2ncKiJP3FtHCyXWXEV27s"
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
 
     if (!apiKey) {
       return Response.json(
@@ -38,9 +38,7 @@ export async function POST(req: Request) {
         console.log(`Testing model: ${modelInfo.name}`)
 
         const result = await generateText({
-          model: google(modelInfo.name, {
-            apiKey: apiKey,
-          }),
+          model: google(modelInfo.name) as any,
           prompt: `You are a helpful customer service AI assistant for businesses in Uganda. Please respond to this customer message in a friendly and professional manner, considering local context and languages (English, Luganda, Swahili): "${message}"`,
           maxTokens: 500,
         })
@@ -117,7 +115,7 @@ export async function POST(req: Request) {
     console.error("All Gemini models failed:", lastError)
 
     let errorMessage = "Failed to connect to Google Gemini API"
-    let troubleshooting = []
+    let troubleshooting: string[] = []
 
     if (lastError instanceof Error) {
       if (lastError.message.includes("API key")) {

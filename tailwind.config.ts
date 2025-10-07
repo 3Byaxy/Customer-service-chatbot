@@ -13,39 +13,96 @@ const config: Config = {
   theme: {
   	extend: {
   		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
+  				background: 'hsl(var(--background))',
+  				foreground: 'hsl(var(--foreground))',
+  				card: {
+  					DEFAULT: 'hsl(var(--card))',
+  					foreground: 'hsl(var(--card-foreground))'
+  				},
+  				popover: {
+  					DEFAULT: 'hsl(var(--popover))',
+  					foreground: 'hsl(var(--popover-foreground))'
+  				},
+  				primary: {
+  					DEFAULT: 'hsl(var(--primary))',
+  					foreground: 'hsl(var(--primary-foreground))'
+  				},
+  				secondary: {
+  					DEFAULT: 'hsl(var(--secondary))',
+  					foreground: 'hsl(var(--secondary-foreground))'
+  				},
+  				muted: {
+  					DEFAULT: 'hsl(var(--muted))',
+  					foreground: 'hsl(var(--muted-foreground))'
+  				},
+  				accent: {
+  					DEFAULT: 'hsl(var(--accent))',
+  					foreground: 'hsl(var(--accent-foreground))'
+  				},
+  				destructive: {
+  					DEFAULT: 'hsl(var(--destructive))',
+  					foreground: 'hsl(var(--destructive-foreground))'
+  				},
+  				border: 'hsl(var(--border))',
+  				input: 'hsl(var(--input))',
+  				ring: 'hsl(var(--ring))',
+  				// Enhanced brand colors
+  				ks: {
+  					primary: 'var(--ks-primary)',
+  					secondary: 'var(--ks-secondary)',
+  					accent: 'var(--ks-accent)',
+  					background: 'var(--ks-background)',
+  					surface: 'var(--ks-surface)',
+  					text: {
+  						primary: 'var(--ks-text-primary)',
+  						secondary: 'var(--ks-text-secondary)',
+  						muted: 'var(--ks-text-muted)'
+  					},
+  					input: {
+  						border: 'var(--ks-input-border)',
+  						'border-focus': 'var(--ks-input-border-focus)',
+  						'border-error': 'var(--ks-input-border-error)',
+  						shadow: 'var(--ks-input-shadow)',
+  						'shadow-focus': 'var(--ks-input-shadow-focus)',
+  						placeholder: 'var(--ks-input-placeholder)'
+  					}
+  				},
+  				kai: {
+  					primary: 'var(--kai-primary)',
+  					secondary: 'var(--kai-secondary)',
+  					accent: 'var(--kai-accent)',
+  					background: 'var(--kai-background)',
+  					surface: 'var(--kai-surface)',
+  					text: {
+  						primary: 'var(--kai-text-primary)',
+  						secondary: 'var(--kai-text-secondary)',
+  						muted: 'var(--kai-text-muted)'
+  					},
+  					input: {
+  						border: 'var(--kai-input-border)',
+  						'border-focus': 'var(--kai-input-border-focus)',
+  						'border-error': 'var(--kai-input-border-error)',
+  						shadow: 'var(--kai-input-shadow)',
+  						'shadow-focus': 'var(--kai-input-shadow-focus)',
+  						placeholder: 'var(--kai-input-placeholder)'
+  					}
+  				},
+  				user: {
+  					message: {
+  						bg: 'var(--user-message-bg)',
+  						text: 'var(--user-message-text)'
+  					}
+  				},
+  				bot: {
+  					message: {
+  						bg: 'var(--bot-message-bg)',
+  						border: 'var(--bot-message-border)',
+  						text: 'var(--bot-message-text)'
+  					}
+  				},
+  				success: 'var(--success-color)',
+  				warning: 'var(--warning-color)',
+  				error: 'var(--error-color)',
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',

@@ -1,37 +1,88 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import APIMonitoring from "@/components/admin/api-monitoring"
+import ConversationAnalytics from "@/components/admin/conversation-analytics"
+import DatabaseManager from "@/components/admin/database-manager"
+import PerformanceMetrics from "@/components/admin/performance-metrics"
+import SystemLogs from "@/components/admin/system-logs"
+import SystemOverview from "@/components/admin/system-overview"
+import TestingConsole from "@/components/admin/testing-console"
+import UserManagement from "@/components/admin/user-management"
+import RealtimeComplaintsDashboard from "@/components/realtime-complaints-dashboard"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
+  Brain,
+  Clock,
   Database,
   MessageSquare,
-  Settings,
-  Users,
-  Zap,
-  TrendingUp,
-  Clock,
-  Brain,
-  Shield,
   RefreshCw,
+  Settings,
+  Shield,
+  TrendingUp,
+  Users,
+  Zap
 } from "lucide-react"
-import SystemOverview from "@/components/admin/system-overview"
-import APIMonitoring from "@/components/admin/api-monitoring"
-import ConversationAnalytics from "@/components/admin/conversation-analytics"
-import TestingConsole from "@/components/admin/testing-console"
-import DatabaseManager from "@/components/admin/database-manager"
-import UserManagement from "@/components/admin/user-management"
-import SystemLogs from "@/components/admin/system-logs"
-import PerformanceMetrics from "@/components/admin/performance-metrics"
+import { useEffect, useState } from "react"
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
   const [systemStatus, setSystemStatus] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(new Date())
+  const [userRole, setUserRole] = useState<string>("admin") // Default to admin for demo
+
+  // Role-based permissions
+  const permissions = {
+    admin: {
+      canViewOverview: true,
+      canViewAPI: true,
+      canViewAnalytics: true,
+      canViewComplaints: true,
+      canViewTesting: true,
+      canViewDatabase: true,
+      canViewUsers: true,
+      canViewLogs: true,
+      canViewPerformance: true,
+      canExport: true,
+      canManageUsers: true,
+      canClearLogs: true,
+    },
+    manager: {
+      canViewOverview: true,
+      canViewAPI: true,
+      canViewAnalytics: true,
+      canViewComplaints: true,
+      canViewTesting: false,
+      canViewDatabase: false,
+      canViewUsers: true,
+      canViewLogs: true,
+      canViewPerformance: true,
+      canExport: true,
+      canManageUsers: false,
+      canClearLogs: false,
+    },
+    support: {
+      canViewOverview: true,
+      canViewAPI: false,
+      canViewAnalytics: true,
+      canViewComplaints: true,
+      canViewTesting: false,
+      canViewDatabase: false,
+      canViewUsers: false,
+      canViewLogs: false,
+      canViewPerformance: false,
+      canExport: false,
+      canManageUsers: false,
+      canClearLogs: false,
+    },
+  }
+
+  const userPermissions = permissions[userRole as keyof typeof permissions] || permissions.support
 
   useEffect(() => {
     fetchSystemStatus()
@@ -180,72 +231,116 @@ export default function AdminDashboard() {
 
         {/* Main Dashboard */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="api" className="flex items-center gap-2">
-              <Brain className="h-4 w-4" />
-              API Monitor
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="testing" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Testing
-            </TabsTrigger>
-            <TabsTrigger value="database" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Database
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Logs
-            </TabsTrigger>
-            <TabsTrigger value="performance" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Performance
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-9">
+            {userPermissions.canViewOverview && (
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewAPI && (
+              <TabsTrigger value="api" className="flex items-center gap-2">
+                <Brain className="h-4 w-4" />
+                API Monitor
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewAnalytics && (
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewComplaints && (
+              <TabsTrigger value="complaints" className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Complaints
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewTesting && (
+              <TabsTrigger value="testing" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Testing
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewDatabase && (
+              <TabsTrigger value="database" className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Database
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewUsers && (
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewLogs && (
+              <TabsTrigger value="logs" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Logs
+              </TabsTrigger>
+            )}
+            {userPermissions.canViewPerformance && (
+              <TabsTrigger value="performance" className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Performance
+              </TabsTrigger>
+            )}
           </TabsList>
 
-          <TabsContent value="overview">
-            <SystemOverview systemStatus={systemStatus} />
-          </TabsContent>
+          {userPermissions.canViewOverview && (
+            <TabsContent value="overview">
+              <SystemOverview systemStatus={systemStatus} />
+            </TabsContent>
+          )}
 
-          <TabsContent value="api">
-            <APIMonitoring />
-          </TabsContent>
+          {userPermissions.canViewAPI && (
+            <TabsContent value="api">
+              <APIMonitoring />
+            </TabsContent>
+          )}
 
-          <TabsContent value="analytics">
-            <ConversationAnalytics />
-          </TabsContent>
+          {userPermissions.canViewAnalytics && (
+            <TabsContent value="analytics">
+              <ConversationAnalytics />
+            </TabsContent>
+          )}
 
-          <TabsContent value="testing">
-            <TestingConsole />
-          </TabsContent>
+          {userPermissions.canViewComplaints && (
+            <TabsContent value="complaints">
+              <RealtimeComplaintsDashboard />
+            </TabsContent>
+          )}
 
-          <TabsContent value="database">
-            <DatabaseManager />
-          </TabsContent>
+          {userPermissions.canViewTesting && (
+            <TabsContent value="testing">
+              <TestingConsole />
+            </TabsContent>
+          )}
 
-          <TabsContent value="users">
-            <UserManagement />
-          </TabsContent>
+          {userPermissions.canViewDatabase && (
+            <TabsContent value="database">
+              <DatabaseManager />
+            </TabsContent>
+          )}
 
-          <TabsContent value="logs">
-            <SystemLogs />
-          </TabsContent>
+          {userPermissions.canViewUsers && (
+            <TabsContent value="users">
+              <UserManagement />
+            </TabsContent>
+          )}
 
-          <TabsContent value="performance">
-            <PerformanceMetrics />
-          </TabsContent>
+          {userPermissions.canViewLogs && (
+            <TabsContent value="logs">
+              <SystemLogs />
+            </TabsContent>
+          )}
+
+          {userPermissions.canViewPerformance && (
+            <TabsContent value="performance">
+              <PerformanceMetrics />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

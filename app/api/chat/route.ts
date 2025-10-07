@@ -1,8 +1,11 @@
-import { streamText, generateObject } from "ai"
-import { openai } from "@ai-sdk/openai"
 import { anthropic } from "@ai-sdk/anthropic"
 import { google } from "@ai-sdk/google"
+import { openai } from "@ai-sdk/openai"
+import { generateObject, streamText } from "ai"
 import { z } from "zod"
+import { languageDetector } from "../../../backend/services/language-detection"
+import { n8nIntegrationService } from "../../../backend/services/n8n-integration"
+import { TRUSTED_ITEMS } from "@/lib/data/trusted"
 
 export async function POST(req: Request) {
   const { messages, businessType, language, useAdvancedNLP = true } = await req.json()
@@ -14,10 +17,16 @@ export async function POST(req: Request) {
   if (useAdvancedNLP && lastUserMessage) {
     try {
       // Check if we have API keys available (prioritize free/cheaper options)
-      const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyD_kvtPIA2IiE2ncKiJP3FtHCyXWXEV27s"
+      const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
       const hasGroqKey = process.env.GROQ_API_KEY
       const hasOpenAIKey = process.env.OPENAI_API_KEY
       const hasAnthropicKey = process.env.ANTHROPIC_API_KEY
+
+      // SECURITY: Removed hardcoded fallback - only use environment variables
+      if (!geminiApiKey) {
+        console.error("🚨 SECURITY ALERT: GOOGLE_GENERATIVE_AI_API_KEY environment variable not set!")
+        console.error("🚨 IMMEDIATE ACTION REQUIRED: Set GOOGLE_GENERATIVE_AI_API_KEY in .env.local")
+      }
 
       if (geminiApiKey) {
         // Try multiple Gemini models for analysis
@@ -26,9 +35,7 @@ export async function POST(req: Request) {
         for (const modelName of analysisModels) {
           try {
             questionAnalysis = await generateObject({
-              model: google(modelName, {
-                apiKey: geminiApiKey,
-              }),
+              model: google(modelName) as any,
               schema: z.object({
                 intent: z.string().describe("Primary intent of the question"),
                 subIntent: z.string().describe("Specific sub-category of the intent"),
@@ -89,7 +96,7 @@ export async function POST(req: Request) {
         // Use Groq for fast question interpretation
         const { groq } = await import("@ai-sdk/groq")
         questionAnalysis = await generateObject({
-          model: groq("llama-3.1-70b-versatile"),
+          model: groq("llama-3.1-70b-versatile") as any,
           schema: z.object({
             intent: z.string().describe("Primary intent of the question"),
             subIntent: z.string().describe("Specific sub-category of the intent"),
@@ -317,6 +324,14 @@ export async function POST(req: Request) {
     : context.escalationTriggers.some((trigger) => lastUserMessage.toLowerCase().includes(trigger.toLowerCase()))
 
   if (shouldEscalate) {
+    // Trigger n8n workflow for escalation
+    await n8nIntegrationService.triggerWorkflow('complaint-escalation', {
+      message: lastUserMessage,
+      businessType,
+      analysis: questionAnalysis?.object,
+      timestamp: new Date(),
+    })
+
     return Response.json({
       escalate: true,
       reason: questionAnalysis
@@ -326,8 +341,27 @@ export async function POST(req: Request) {
     })
   }
 
+  // Language detection and agent routing
+  let languageDetection = null
+  try {
+    languageDetection = await languageDetector.detectAndRoute(lastUserMessage)
+
+    // Trigger n8n workflow for language detection
+    if (languageDetection.agentResponse) {
+      await n8nIntegrationService.triggerWorkflow('language-detected', {
+        message: lastUserMessage,
+        detectedLanguage: languageDetection.primaryLanguage,
+        agentUsed: languageDetection.agentResponse.agentUsed,
+        confidence: languageDetection.confidence,
+        timestamp: new Date(),
+      })
+    }
+  } catch (error) {
+    console.error('Language detection error:', error)
+  }
+
   // Check available API keys and choose model accordingly (prioritize free/cheaper options)
-  const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyD_kvtPIA2IiE2ncKiJP3FtHCyXWXEV27s"
+  const geminiApiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
   const hasGroqKey = process.env.GROQ_API_KEY
   const hasOpenAIKey = process.env.OPENAI_API_KEY
   const hasAnthropicKey = process.env.ANTHROPIC_API_KEY
@@ -349,6 +383,32 @@ export async function POST(req: Request) {
     })
   }
 
+  // Quick trusted-results intent detection (before streaming)
+  try {
+    const q = lastUserMessage.toLowerCase()
+    const isProductIntent = /(buy|find|price|where to|dealer|catalog|product|machine|car|bundle)/.test(q)
+    if (isProductIntent) {
+      const matched = TRUSTED_ITEMS.filter(
+        (i) => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q) || i.category.toLowerCase().includes(q),
+      ).slice(0, 6)
+      if (matched.length > 0) {
+        return Response.json({
+          content: "Here are trusted results I found",
+          richResults: matched.map((m) => ({
+            id: m.id,
+            name: m.name,
+            price: m.price,
+            badges: m.badges,
+            image: m.image,
+            url: `/product/${m.id}`,
+          })),
+        })
+      }
+    }
+  } catch (e) {
+    // fall through to normal flow
+  }
+
   // Choose AI model based on availability and complexity (prioritize cost-effective options)
   let selectedModel
   let modelProvider = "fallback"
@@ -366,12 +426,12 @@ export async function POST(req: Request) {
       for (const modelInfo of modelsToTry) {
         try {
           if (questionAnalysis && questionAnalysis.object.complexity === "complex" && modelInfo.name.includes("pro")) {
-            selectedModel = google(modelInfo.name, { apiKey: geminiApiKey })
+            selectedModel = google(modelInfo.name) as any
             modelProvider = modelInfo.provider
             modelSelected = true
             break
           } else if (!modelInfo.name.includes("pro")) {
-            selectedModel = google(modelInfo.name, { apiKey: geminiApiKey })
+            selectedModel = google(modelInfo.name) as any
             modelProvider = modelInfo.provider
             modelSelected = true
             break
@@ -384,13 +444,13 @@ export async function POST(req: Request) {
 
       if (!modelSelected) {
         // Fallback to basic flash model
-        selectedModel = google("gemini-1.5-flash", { apiKey: geminiApiKey })
+        selectedModel = google("gemini-1.5-flash") as any
         modelProvider = "gemini-flash"
       }
     } else if (hasGroqKey) {
       // Groq is very fast and cost-effective
       const { groq } = await import("@ai-sdk/groq")
-      selectedModel = groq("llama-3.1-70b-versatile")
+      selectedModel = groq("llama-3.1-70b-versatile") as any
       modelProvider = "groq"
     } else if (
       hasAnthropicKey &&
@@ -398,14 +458,14 @@ export async function POST(req: Request) {
         questionAnalysis?.object.sentiment.polarity === "negative")
     ) {
       // Use Claude for complaints and sensitive topics
-      selectedModel = anthropic("claude-3-5-sonnet-20241022")
+      selectedModel = anthropic("claude-3-5-sonnet-20241022") as any
       modelProvider = "anthropic"
     } else if (hasOpenAIKey) {
       if (questionAnalysis && (questionAnalysis.object.complexity === "complex" || businessType === "banking")) {
-        selectedModel = openai("gpt-4o") // Use GPT-4 for complex queries and banking
+        selectedModel = openai("gpt-4o") as any // Use GPT-4 for complex queries and banking
         modelProvider = "openai-gpt4"
       } else {
-        selectedModel = openai("gpt-4o-mini") // Use mini for simple queries
+        selectedModel = openai("gpt-4o-mini") as any // Use mini for simple queries
         modelProvider = "openai-mini"
       }
     } else {
@@ -429,7 +489,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await streamText({
-      model: selectedModel,
+      model: selectedModel as any,
       system:
         context.systemPrompt +
         `\n\nCurrent language preference: ${language}. Respond in ${language === "lg" ? "Luganda" : language === "sw" ? "Swahili" : "English"}.
@@ -449,6 +509,8 @@ export async function POST(req: Request) {
     response.headers.set("X-Model-Provider", modelProvider)
     response.headers.set("X-Analysis-Available", questionAnalysis ? "true" : "false")
     response.headers.set("X-API-Key-Status", "configured")
+    response.headers.set("X-Language-Detected", languageDetection?.primaryLanguage || "unknown")
+    response.headers.set("X-Agent-Used", languageDetection?.agentResponse?.agentUsed || "none")
 
     return response
   } catch (error) {

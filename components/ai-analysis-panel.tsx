@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Brain, Target, Heart, Clock, AlertTriangle, MessageSquare } from 'lucide-react'
+import { AlertTriangle, Brain } from 'lucide-react'
+import { useState } from 'react'
 
 interface QuestionAnalysis {
   intent: string
@@ -112,6 +112,10 @@ export default function AIAnalysisPanel({ analysis, isAnalyzing }: AIAnalysisPan
     }
   }
 
+  if (!analysis) {
+    return null
+  }
+
   return (
     <Card className="h-fit">
       <CardHeader>
@@ -160,8 +164,8 @@ export default function AIAnalysisPanel({ analysis, isAnalyzing }: AIAnalysisPan
               <span className={`text-xs font-medium ${getSentimentColor(analysis.sentiment.polarity, analysis.sentiment.intensity)}`}>
                 {analysis.sentiment.polarity}
               </span>
-              <Progress 
-                value={analysis.sentiment.intensity * 100} 
+              <Progress
+                value={analysis.sentiment.intensity * 100}
                 className="w-12 h-1"
               />
             </div>

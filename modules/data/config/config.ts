@@ -72,8 +72,8 @@ export interface EnvironmentConfig {
 export const defaultConfig: EnvironmentConfig = {
   google: {
     gemini: {
-      key: process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyD_kvtPIA2IiE2ncKiJP3FtHCyXWXEV27s",
-      enabled: true,
+      key: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+      enabled: !!process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       rateLimit: 60, // requests per minute
       quotaLimit: 1000000, // tokens per day
       region: "global",

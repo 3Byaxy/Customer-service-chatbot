@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Cpu, HardDrive, Wifi, Zap, TrendingUp, TrendingDown, BarChart3 } from "lucide-react"
+import { BarChart3, Cpu, HardDrive, TrendingDown, TrendingUp, Wifi, Zap } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export default function PerformanceMetrics() {
   const [metrics, setMetrics] = useState<any>(null)
@@ -208,10 +208,11 @@ export default function PerformanceMetrics() {
       </div>
 
       <Tabs defaultValue="system" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="system">System</TabsTrigger>
           <TabsTrigger value="api">API Performance</TabsTrigger>
           <TabsTrigger value="database">Database</TabsTrigger>
+          <TabsTrigger value="charts">Charts</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
         </TabsList>
 
@@ -364,6 +365,134 @@ export default function PerformanceMetrics() {
                   <span className="text-sm text-gray-600">Cache Hit Rate</span>
                   <span className="font-medium text-green-600">{metrics?.database?.cache?.hitRate}%</span>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="charts" className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Real-time CPU & Memory Usage</CardTitle>
+                <CardDescription>Live system resource monitoring</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={metrics?.trends?.hourly?.slice(-12) || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="hour" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="requests"
+                      stroke="#8884d8"
+                      name="Requests"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="responseTime"
+                      stroke="#82ca9d"
+                      name="Response Time (ms)"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>API Performance Distribution</CardTitle>
+                <CardDescription>Success rates across endpoints</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={metrics?.api?.endpoints || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="path" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="successRate" fill="#8884d8" name="Success Rate %" />
+                    <Bar dataKey="errors" fill="#ff7c7c" name="Errors" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Weekly Performance Trends</CardTitle>
+                <CardDescription>Daily performance overview</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={metrics?.trends?.daily || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="requests"
+                      stackId="1"
+                      stroke="#8884d8"
+                      fill="#8884d8"
+                      name="Requests"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="responseTime"
+                      stackId="2"
+                      stroke="#82ca9d"
+                      fill="#82ca9d"
+                      name="Response Time"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Resource Usage Breakdown</CardTitle>
+                <CardDescription>Current system resource allocation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'CPU Usage', value: realTimeData?.cpu || 0, fill: '#0088FE' },
+                        { name: 'Memory Usage', value: realTimeData?.memory || 0, fill: '#00C49F' },
+                        { name: 'Disk Usage', value: metrics?.resources?.disk?.used || 0, fill: '#FFBB28' },
+                        { name: 'Available', value: 100 - (realTimeData?.cpu || 0) - (realTimeData?.memory || 0) - (metrics?.resources?.disk?.used || 0), fill: '#FF8042' },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {[
+                        { fill: '#0088FE' },
+                        { fill: '#00C49F' },
+                        { fill: '#FFBB28' },
+                        { fill: '#FF8042' },
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>

@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle, XCircle, Clock, MessageSquare, User, Bot, Globe, Phone, Eye, ThumbsUp } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Bot, CheckCircle, Clock, Eye, Globe, MessageSquare, Phone, ThumbsUp, User, XCircle } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface ApprovalRequest {
   id: string
@@ -43,6 +43,7 @@ interface ConversationLog {
 }
 
 export default function AdminApprovalInterface() {
+  console.time('AdminApprovalInterface render')
   const [pendingApprovals, setPendingApprovals] = useState<ApprovalRequest[]>([])
   const [activeConversations, setActiveConversations] = useState<ConversationLog[]>([])
   const [selectedApproval, setSelectedApproval] = useState<ApprovalRequest | null>(null)
@@ -72,6 +73,7 @@ export default function AdminApprovalInterface() {
   }, [])
 
   const loadApprovalData = async () => {
+    console.time('loadApprovalData')
     try {
       const response = await fetch("/api/chat-approval")
       if (response.ok) {
@@ -82,9 +84,11 @@ export default function AdminApprovalInterface() {
     } catch (error) {
       console.error("Error loading approval data:", error)
     }
+    console.timeEnd('loadApprovalData')
   }
 
   const loadConversations = async () => {
+    console.time('loadConversations')
     try {
       const response = await fetch("/api/admin/conversations")
       if (response.ok) {
@@ -94,6 +98,7 @@ export default function AdminApprovalInterface() {
     } catch (error) {
       console.error("Error loading conversations:", error)
     }
+    console.timeEnd('loadConversations')
   }
 
   const handleApprove = async (approvalId: string, useCustomResponse = false) => {
@@ -558,4 +563,5 @@ export default function AdminApprovalInterface() {
       </Card>
     </div>
   )
+  console.timeEnd('AdminApprovalInterface render')
 }

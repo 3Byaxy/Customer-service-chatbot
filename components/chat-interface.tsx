@@ -1,21 +1,23 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Send, Bot, User, Globe, Clock } from 'lucide-react'
 import AIAnalysisPanel from '@/components/ai-analysis-panel'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Bot, Send, User, Globe, Copy, RefreshCw, Square } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { LanguageDetector, type LanguageDetectionResult } from '@/environment/language-detection'
 
 interface Message {
   id: string
-  type: 'user' | 'bot'
+  type: 'user' | 'bot' | 'suggestion'
   content: string
   timestamp: Date
   language?: string
   context?: string[]
+  richResults?: Array<{ id: string; name: string; price: string; badges?: string[]; url?: string }>
 }
 
 interface ChatInterfaceProps {
@@ -40,6 +42,14 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
 
   const [questionAnalysis, setQuestionAnalysis] = useState(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+
+  // New: language detection + streaming controls
+  const detectorRef = useRef<LanguageDetector | null>(null)
+  const [detection, setDetection] = useState<LanguageDetectionResult | null>(null)
+  const [autoLanguage, setAutoLanguage] = useState(true)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -72,7 +82,52 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
     }
   }, [messages])
 
-  const handleSendMessage = async () => {
+  // Initialize detector once
+  useEffect(() => {
+    if (!detectorRef.current) {
+      detectorRef.current = new LanguageDetector()
+    }
+  }, [])
+
+  // Detect language as user types
+  useEffect(() => {
+    if (input.trim().length > 2 && detectorRef.current) {
+      const result = detectorRef.current.detectLanguage(input)
+      setDetection(result)
+      if (autoLanguage && result?.suggestedResponse) {
+        setSelectedLanguage(result.suggestedResponse)
+      }
+    } else {
+      setDetection(null)
+    }
+  }, [input, autoLanguage])
+
+  const stopStreaming = () => {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+      setIsStreaming(false)
+      setIsTyping(false)
+    }
+  }
+
+  const copyMessage = async (id: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 1500)
+    } catch {}
+  }
+
+  const regenerateLast = async () => {
+    const lastUser = [...messages].reverse().find(m => m.type === 'user')
+    if (lastUser) {
+      setInput(lastUser.content)
+      await handleSendMessage(true)
+    }
+  }
+
+  const handleSendMessage = async (isRegeneration = false) => {
     if (!input.trim()) return
 
     const userMessage: Message = {
@@ -89,6 +144,11 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
     setIsAnalyzing(true)
 
     try {
+      // Abort controller for streaming cancel
+      const controller = new AbortController()
+      abortRef.current = controller
+      setIsStreaming(true)
+
       // Call the enhanced API with AI analysis
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -101,16 +161,63 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
           businessType,
           language: selectedLanguage,
           useAdvancedNLP: true
-        })
+        }),
+        signal: controller.signal
       })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const data = await response.json()
+      // Try to peek headers for fallback/metadata
+      const provider = response.headers.get('X-Model-Provider')
+      const analysisAvailable = response.headers.get('X-Analysis-Available')
+
+      // If it's JSON, handle non-stream path
+      const contentType = response.headers.get('Content-Type') || ''
+      if (contentType.includes('application/json')) {
+        const data = await response.json()
+        
+        // Check if escalation is needed
+        if (data.escalate) {
+          const escalationMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: 'bot',
+            content: `I understand this requires special attention. Let me connect you with a human agent who can better assist you. Reason: ${data.reason}`,
+            timestamp: new Date(),
+            language: selectedLanguage,
+            context: ['escalation', 'human_agent']
+          }
+          setMessages(prev => [...prev, escalationMessage])
+          setQuestionAnalysis(data.analysis)
+          setIsAnalyzing(false)
+          setIsTyping(false)
+          setIsStreaming(false)
+          abortRef.current = null
+          return
+        }
+
+        // Handle fallback response (when AI services are unavailable)
+        if (data.fallback || data.content) {
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: 'bot',
+            content: data.content || data.message || 'I apologize, but I encountered an issue. Please try again.',
+            timestamp: new Date(),
+            language: selectedLanguage,
+            context: data.fallback ? ['fallback', 'basic_response'] : ['ai_response', businessType]
+          }
+          setMessages(prev => [...prev, botMessage])
+          setQuestionAnalysis(data.analysis)
+          setIsAnalyzing(false)
+          setIsTyping(false)
+          setIsStreaming(false)
+          abortRef.current = null
+          return
+        }
+      }
       
-      // Check if escalation is needed
+      // Handle streaming response
       if (data.escalate) {
         const escalationMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -127,17 +234,31 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
         return
       }
 
-      // Handle fallback response (when AI services are unavailable)
-      if (data.fallback || data.content) {
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'bot',
-          content: data.content || data.message || 'I apologize, but I encountered an issue. Please try again.',
-          timestamp: new Date(),
-          language: selectedLanguage,
-          context: data.fallback ? ['fallback', 'basic_response'] : ['ai_response', businessType]
+      // Handle fallback response (when AI services are unavailable) OR trusted results
+      if (data.richResults || data.fallback || data.content) {
+        if (data.content || data.message) {
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            type: 'bot',
+            content: data.content || data.message || 'I apologize, but I encountered an issue. Please try again.',
+            timestamp: new Date(),
+            language: selectedLanguage,
+            context: data.fallback ? ['fallback', 'basic_response'] : ['ai_response', businessType]
+          }
+          setMessages(prev => [...prev, botMessage])
         }
-        setMessages(prev => [...prev, botMessage])
+
+        if (data.richResults && Array.isArray(data.richResults)) {
+          const resultsMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            type: 'suggestion',
+            content: 'Trusted results:',
+            timestamp: new Date(),
+            richResults: data.richResults.map((r: any) => ({ id: r.id, name: r.name, price: r.price, badges: r.badges, url: r.url })),
+          }
+          setMessages(prev => [...prev, resultsMessage])
+        }
+
         setQuestionAnalysis(data.analysis)
         setIsAnalyzing(false)
         setIsTyping(false)
@@ -192,7 +313,16 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
     } finally {
       setIsTyping(false)
       setIsAnalyzing(false)
+      setIsStreaming(false)
+      abortRef.current = null
     }
+  }
+
+  const quickActionsByBusiness: Record<string, string[]> = {
+    telecom: ['Check balance', 'Buy bundle', 'View plans'],
+    banking: ['Check balance', 'Transfer money', 'Card issues'],
+    utilities: ['Report outage', 'Check bill', 'New connection'],
+    ecommerce: ['Track order', 'Return item', 'Payment issue']
   }
 
   const generateContextualResponse = (query: string, business: string, language: string) => {
@@ -233,7 +363,22 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
               <Bot className="h-5 w-5" />
               Customer Support Chat
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              {detection && (
+                <Badge variant="outline" className="text-xs flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  Detected: {detection.primaryLanguage.toUpperCase()} ({Math.round(detection.confidence * 100)}%)
+                </Badge>
+              )}
+              <Button
+                variant={autoLanguage ? 'default' : 'outline'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setAutoLanguage(v => !v)}
+                title="Automatically switch reply language to detected"
+              >
+                Auto
+              </Button>
               {languages.map((lang) => (
                 <Button
                   key={lang.code}
@@ -252,7 +397,7 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
           <CardContent className="flex-1 flex flex-col">
             <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
               <div className="space-y-4">
-                {messages.map((message) => (
+                {messages.map((message, idx) => (
                   <div
                     key={message.id}
                     className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -289,6 +434,57 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
                           ))}
                         </div>
                       )}
+
+                      {/* Trusted results inline */}
+                      {message.type === 'suggestion' && message.richResults && (
+                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {message.richResults.map((r) => (
+                            <div key={r.id} className="border rounded p-2 bg-white text-gray-800">
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-sm line-clamp-1">{r.name}</div>
+                                <div className="text-xs text-green-700 font-semibold">{r.price}</div>
+                              </div>
+                              {r.badges && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {r.badges.slice(0,3).map((b, i) => (
+                                    <Badge key={i} variant="outline" className="text-[10px]">{b}</Badge>
+                                  ))}
+                                </div>
+                              )}
+                              {r.url && (
+                                <div className="mt-2">
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={()=> window.open(r.url!, '_blank')}>View</Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Actions for bot messages */}
+                      {message.type === 'bot' && (
+                        <div className="flex gap-2 mt-2 text-xs">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 px-2"
+                            onClick={() => copyMessage(message.id, message.content)}
+                          >
+                            <Copy className="h-3 w-3 mr-1" /> {copiedId === message.id ? 'Copied!' : 'Copy'}
+                          </Button>
+                          {/* Show Regenerate on last bot message */}
+                          {idx === messages.length - 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2"
+                              onClick={regenerateLast}
+                            >
+                              <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -308,7 +504,24 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
               </div>
             </ScrollArea>
             
-            <div className="flex gap-2 mt-4">
+            {/* Detection info bar */}
+            {detection && detection.confidence > 0.5 && (
+              <div className="mt-2 text-xs text-gray-600 flex items-center gap-2">
+                <Globe className="h-3 w-3" />
+                Detected {detection.primaryLanguage.toUpperCase()} ({Math.round(detection.confidence * 100)}%)
+                {detection.localTerms.length > 0 && (
+                  <div className="flex gap-1 ml-2">
+                    {detection.localTerms.slice(0, 2).map((t, i) => (
+                      <Badge key={i} variant="outline" className="text-[10px] h-4 px-1">
+                        {t.term}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-3">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -316,9 +529,31 @@ export default function ChatInterface({ businessType }: ChatInterfaceProps) {
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 disabled={isTyping}
               />
-              <Button onClick={handleSendMessage} disabled={isTyping || !input.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
+
+              {isStreaming ? (
+                <Button onClick={stopStreaming} variant="destructive">
+                  <Square className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button onClick={() => handleSendMessage()} disabled={isTyping || !input.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Quick actions aligned with README */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {(quickActionsByBusiness[businessType] || quickActionsByBusiness['telecom']).map((qa) => (
+                <Button
+                  key={qa}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs bg-transparent"
+                  onClick={() => setInput(qa)}
+                >
+                  {qa}
+                </Button>
+              ))}
             </div>
           </CardContent>
         </Card>

@@ -1,9 +1,35 @@
 /**
- * Secrets Management
+ * Secrets Management & Environment Configuration
  * Handles encryption and secure storage of sensitive data
  *
  * IMPORTANT: This file should never contain actual secrets in production
  * Use environment variables or secure secret management services
+ *
+ * Environment Variables Required:
+ * ===============================
+ *
+ * AI PROVIDERS:
+ * - GOOGLE_GENERATIVE_AI_API_KEY (Gemini) - Free tier available
+ * - ANTHROPIC_API_KEY (Claude) - Paid service
+ * - OPENAI_API_KEY (GPT models) - Paid service
+ * - GROQ_API_KEY (Fast inference) - Free tier available
+ *
+ * AI AGENTS:
+ * - ELEVENLABS_API_KEY (Text-to-Speech) - Free tier available
+ * - VAPI_API_KEY (Voice Agents) - Paid service
+ * - VOICEFLOW_API_KEY (Dialogue Flows) - Free tier available
+ *
+ * WORKFLOW AUTOMATION:
+ * - N8N_WEBHOOK_URL (n8n instance URL)
+ * - N8N_API_KEY (n8n authentication)
+ *
+ * DATABASE:
+ * - DATABASE_URL (PostgreSQL/Neon)
+ *
+ * SYSTEM:
+ * - ENCRYPTION_KEY (For data encryption)
+ * - NEXTAUTH_SECRET (For authentication)
+ * - NEXTAUTH_URL (For authentication)
  */
 
 import crypto from "crypto"
@@ -25,11 +51,12 @@ export class SecretsManager {
       const iv = crypto.randomBytes(16)
       const key = crypto.scryptSync(this.encryptionKey, "salt", 32)
 
-      const cipher = crypto.createCipher(algorithm, key)
+      const cipher = crypto.createCipheriv(algorithm, key, iv)
       let encrypted = cipher.update(text, "utf8", "hex")
       encrypted += cipher.final("hex")
+      const authTag = cipher.getAuthTag()
 
-      return iv.toString("hex") + ":" + encrypted
+      return iv.toString("hex") + ":" + authTag.toString("hex") + ":" + encrypted
     } catch (error) {
       console.error("Encryption failed:", error)
       return text // Fallback to plain text in development
@@ -46,11 +73,17 @@ export class SecretsManager {
       }
 
       const algorithm = "aes-256-gcm"
-      const [ivHex, encrypted] = encryptedText.split(":")
+      const [ivHex, authTagHex, encrypted] = encryptedText.split(":") 
+      if (!authTagHex) {
+        // Legacy format without auth tag - return as-is for compatibility
+        return encryptedText
+      }
       const iv = Buffer.from(ivHex, "hex")
       const key = crypto.scryptSync(this.encryptionKey, "salt", 32)
 
-      const decipher = crypto.createDecipher(algorithm, key)
+      const authTag = Buffer.from(authTagHex, "hex")
+      const decipher = crypto.createDecipheriv(algorithm, key, iv)
+      decipher.setAuthTag(authTag)
       let decrypted = decipher.update(encrypted, "hex", "utf8")
       decrypted += decipher.final("utf8")
 

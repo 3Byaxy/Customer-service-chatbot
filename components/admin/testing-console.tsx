@@ -1,25 +1,26 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import {
-  Send,
-  Play,
-  Settings,
-  MessageSquare,
-  Brain,
-  Zap,
-  CheckCircle,
   AlertTriangle,
+  Bot,
+  Brain,
+  CheckCircle,
   Copy,
   Download,
+  MessageSquare,
+  Play,
+  Send,
+  Settings,
+  Zap
 } from "lucide-react"
+import { useState } from "react"
 
 export default function TestingConsole() {
   const [testMessage, setTestMessage] = useState("Hello, I need help with my data bundle.")
@@ -191,13 +192,121 @@ export default function TestingConsole() {
     a.click()
   }
 
+  const testAIAgents = async () => {
+    setIsLoading(true)
+    const startTime = Date.now()
+
+    try {
+      const response = await fetch("/api/ai-agents/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: testMessage }),
+      })
+
+      const endTime = Date.now()
+      const responseTime = endTime - startTime
+
+      if (response.ok) {
+        const data = await response.json()
+        const result = {
+          id: Date.now(),
+          timestamp: new Date(),
+          input: testMessage,
+          responseTime,
+          status: "success",
+          output: data.response,
+          agent: data.agentUsed,
+          language: data.language,
+        }
+        setTestResults((prev) => [result, ...prev])
+      } else {
+        const result = {
+          id: Date.now(),
+          timestamp: new Date(),
+          input: testMessage,
+          responseTime,
+          status: "error",
+          error: "AI Agent test failed",
+        }
+        setTestResults((prev) => [result, ...prev])
+      }
+    } catch (error) {
+      const result = {
+        id: Date.now(),
+        timestamp: new Date(),
+        input: testMessage,
+        responseTime: Date.now() - startTime,
+        status: "error",
+        error: "Network error",
+      }
+      setTestResults((prev) => [result, ...prev])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const testLanguageDetection = async () => {
+    setIsLoading(true)
+    const startTime = Date.now()
+
+    try {
+      const response = await fetch("/api/language-detection/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: testMessage }),
+      })
+
+      const endTime = Date.now()
+      const responseTime = endTime - startTime
+
+      if (response.ok) {
+        const data = await response.json()
+        const result = {
+          id: Date.now(),
+          timestamp: new Date(),
+          input: testMessage,
+          responseTime,
+          status: "success",
+          output: `Detected: ${data.primaryLanguage} (${data.confidence})`,
+          agent: data.agentResponse?.agentUsed || "None",
+          language: data.primaryLanguage,
+        }
+        setTestResults((prev) => [result, ...prev])
+      } else {
+        const result = {
+          id: Date.now(),
+          timestamp: new Date(),
+          input: testMessage,
+          responseTime,
+          status: "error",
+          error: "Language detection test failed",
+        }
+        setTestResults((prev) => [result, ...prev])
+      }
+    } catch (error) {
+      const result = {
+        id: Date.now(),
+        timestamp: new Date(),
+        input: testMessage,
+        responseTime: Date.now() - startTime,
+        status: "error",
+        error: "Network error",
+      }
+      setTestResults((prev) => [result, ...prev])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="single" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="single">Single Test</TabsTrigger>
           <TabsTrigger value="bulk">Bulk Test</TabsTrigger>
           <TabsTrigger value="stress">Stress Test</TabsTrigger>
+          <TabsTrigger value="ai-agents">AI Agents</TabsTrigger>
+          <TabsTrigger value="language">Language</TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
         </TabsList>
 
@@ -426,6 +535,94 @@ Nfuna obuzibu ku network yange`}
                   <>
                     <Zap className="h-4 w-4 mr-2" />
                     Run Stress Test
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ai-agents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                AI Agents Test
+              </CardTitle>
+              <CardDescription>Test AI agent routing and responses</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Test Message for Agent Routing</Label>
+                <Textarea
+                  value={testMessage}
+                  onChange={(e) => setTestMessage(e.target.value)}
+                  placeholder="Enter message to test agent routing..."
+                  rows={3}
+                  className="mt-1"
+                />
+              </div>
+
+              <Button onClick={() => testAIAgents()} disabled={isLoading || !testMessage.trim()} className="w-full">
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Testing AI Agents...
+                  </>
+                ) : (
+                  <>
+                    <Bot className="h-4 w-4 mr-2" />
+                    Test AI Agents
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="language" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Language Detection Test
+              </CardTitle>
+              <CardDescription>Test language detection and agent routing</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Test Message for Language Detection</Label>
+                <Textarea
+                  value={testMessage}
+                  onChange={(e) => setTestMessage(e.target.value)}
+                  placeholder="Enter multilingual message to test detection..."
+                  rows={3}
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setTestMessage("Hello, I need help with my account")}>
+                  English
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setTestMessage("Webale, njagala obuyambi ku account yange")}>
+                  Luganda
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setTestMessage("Habari, nataka msaada na akaunti yangu")}>
+                  Swahili
+                </Button>
+              </div>
+
+              <Button onClick={() => testLanguageDetection()} disabled={isLoading || !testMessage.trim()} className="w-full">
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Detecting Language...
+                  </>
+                ) : (
+                  <>
+                    <Globe className="h-4 w-4 mr-2" />
+                    Test Language Detection
                   </>
                 )}
               </Button>

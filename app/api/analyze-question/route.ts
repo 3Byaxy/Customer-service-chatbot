@@ -1,5 +1,5 @@
-import { generateObject } from 'ai'
 import { groq } from '@ai-sdk/groq'
+import { generateObject } from 'ai'
 import { z } from 'zod'
 
 const questionAnalysisSchema = z.object({
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     const businessContext = businessContextMap[businessType as keyof typeof businessContextMap] || businessContextMap.telecom
 
     const analysis = await generateObject({
-      model: groq('llama-3.1-70b-versatile'),
+      model: groq('llama-3.1-70b-versatile') as any,
       schema: questionAnalysisSchema,
       prompt: `You are an advanced AI system that analyzes customer service questions for ${businessType} businesses in Uganda. 
 

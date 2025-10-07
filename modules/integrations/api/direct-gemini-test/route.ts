@@ -1,7 +1,7 @@
 export async function POST(req: Request) {
   try {
     const { message } = await req.json()
-    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyD_kvtPIA2IiE2ncKiJP3FtHCyXWXEV27s"
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
 
     if (!apiKey) {
       return Response.json({ error: "API key not configured" }, { status: 400 })

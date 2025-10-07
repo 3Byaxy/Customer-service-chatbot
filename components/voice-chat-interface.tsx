@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX, MessageSquare, Headphones } from "lucide-react"
+import { Headphones, MessageSquare, Mic, MicOff, Phone, PhoneOff, Volume2, VolumeX } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 
 interface VoiceChatProps {
   businessType: string

@@ -1,26 +1,29 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { LanguageDetector, type LanguageDetectionResult } from "@/environment/language-detection"
 import {
-  MessageCircle,
-  Send,
-  Minimize2,
-  Maximize2,
-  Bot,
-  User,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Globe,
-  Mic,
-  MicOff,
+    AlertCircle,
+    Bot,
+    CheckCircle,
+    Clock,
+    Globe,
+    Maximize2,
+    MessageCircle,
+    Mic,
+    MicOff,
+    Minimize2,
+    Send,
+    User,
+    Copy,
+    RefreshCw,
+    Square,
 } from "lucide-react"
-import { languageDetector, type LanguageDetectionResult } from "@/environment/language-detection"
+import { useEffect, useRef, useState } from "react"
 
 interface Message {
   id: string
@@ -60,6 +63,15 @@ export default function CompactChatbotWidget({
 
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
+  const detectorRef = useRef<LanguageDetector | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  // Initialize language detector
+  useEffect(() => {
+    if (!detectorRef.current) detectorRef.current = new LanguageDetector()
+  }, [])
 
   // Initialize speech recognition
   useEffect(() => {
@@ -110,18 +122,43 @@ export default function CompactChatbotWidget({
 
   // Handle language detection on input change
   useEffect(() => {
-    if (input.trim().length > 3) {
-      const detection = languageDetector.detectLanguage(input)
+    if (input.trim().length > 3 && detectorRef.current) {
+      const detection = detectorRef.current.detectLanguage(input)
       setDetectedLanguage(detection)
     } else {
       setDetectedLanguage(null)
     }
   }, [input])
 
+  const stopStreaming = () => {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+      setIsStreaming(false)
+      setIsTyping(false)
+    }
+  }
+
+  const copyMessage = async (id: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(null), 1500)
+    } catch {}
+  }
+
+  const regenerateLast = async () => {
+    const lastUser = [...messages].reverse().find(m => m.type === 'user')
+    if (lastUser) {
+      setInput(lastUser.content)
+      await handleSendMessage()
+    }
+  }
+
   const handleSendMessage = async () => {
     if (!input.trim()) return
 
-    const detection = languageDetector.detectLanguage(input)
+    const detection = detectorRef.current?.detectLanguage(input) as LanguageDetectionResult
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -136,6 +173,11 @@ export default function CompactChatbotWidget({
     setIsTyping(true)
 
     try {
+      // Allow cancel
+      const controller = new AbortController()
+      abortRef.current = controller
+      setIsStreaming(true)
+
       // Send to approval system first
       const response = await fetch("/api/chat-approval", {
         method: "POST",
@@ -147,6 +189,7 @@ export default function CompactChatbotWidget({
           language: detection.suggestedResponse,
           detectedLanguage: detection,
         }),
+        signal: controller.signal,
       })
 
       const data = await response.json()
@@ -199,6 +242,8 @@ export default function CompactChatbotWidget({
           setMessages((prev) => [...prev, suggestionMessage])
         }
       }
+      setIsStreaming(false)
+      abortRef.current = null
     } catch (error) {
       console.error("Error:", error)
       const errorMessage: Message = {
@@ -216,6 +261,8 @@ export default function CompactChatbotWidget({
       setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsTyping(false)
+      setIsStreaming(false)
+      abortRef.current = null
     }
   }
 
@@ -267,6 +314,13 @@ export default function CompactChatbotWidget({
         </Button>
       </div>
     )
+  }
+
+  const quickActionsByBusiness: Record<string, string[]> = {
+    telecom: ['Check balance', 'Buy bundle', 'View plans'],
+    banking: ['Check balance', 'Transfer money', 'Card issues'],
+    utilities: ['Report outage', 'Check bill', 'New connection'],
+    ecommerce: ['Track order', 'Return item', 'Payment issue'],
   }
 
   return (
@@ -355,6 +409,20 @@ export default function CompactChatbotWidget({
                             )}
                           </div>
                           <p className="leading-relaxed">{message.content}</p>
+                          {message.type === "bot" && (
+                            <div className="flex gap-2 mt-2">
+                              <Button variant="outline" size="sm" className="h-6 px-2"
+                                onClick={() => copyMessage(message.id, message.content)}>
+                                <Copy className="h-3 w-3 mr-1" /> {copiedId === message.id ? 'Copied!' : 'Copy'}
+                              </Button>
+                              {/* Regenerate available for last bot message */}
+                              {message.id === messages.filter(m => m.type === 'bot').slice(-1)[0]?.id && (
+                                <Button variant="outline" size="sm" className="h-6 px-2" onClick={regenerateLast}>
+                                  <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -442,9 +510,23 @@ export default function CompactChatbotWidget({
                     {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </Button>
                 )}
-                <Button onClick={handleSendMessage} disabled={isTyping || !input.trim()} size="sm" className="px-3">
-                  <Send className="h-4 w-4" />
-                </Button>
+                {isStreaming ? (
+                  <Button onClick={stopStreaming} size="sm" variant="destructive" className="px-3">
+                    <Square className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button onClick={handleSendMessage} disabled={isTyping || !input.trim()} size="sm" className="px-3">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {/* Quick Actions */}
+              <div className="mt-2 flex flex-wrap gap-1">
+                {(quickActionsByBusiness[businessType] || quickActionsByBusiness['telecom']).map((qa) => (
+                  <Button key={qa} variant="outline" size="sm" className="text-xs h-6 px-2 bg-transparent" onClick={() => setInput(qa)}>
+                    {qa}
+                  </Button>
+                ))}
               </div>
             </div>
           </>

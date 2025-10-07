@@ -1,9 +1,7 @@
-/* Import Google Fonts */
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+/* Import Google Fonts - Optimized for performance */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap");
 
 /* CSS Variables */
 :root {
@@ -17,6 +15,15 @@
   --ks-text-secondary: #64748b;
   --ks-text-muted: #94a3b8;
 
+  /* Enhanced Input Colors */
+  --ks-input-bg: #ffffff;
+  --ks-input-border: #e2e8f0;
+  --ks-input-border-focus: #4a90e2;
+  --ks-input-border-error: #ef4444;
+  --ks-input-shadow: rgba(74, 144, 226, 0.1);
+  --ks-input-shadow-focus: rgba(74, 144, 226, 0.2);
+  --ks-input-placeholder: #94a3b8;
+
   /* KizunaAI Colors */
   --kai-primary: #2ec4b6;
   --kai-secondary: #ff6b81;
@@ -26,6 +33,25 @@
   --kai-gradient-primary: linear-gradient(135deg, #2ec4b6 0%, #ff6b81 100%);
   --kai-gradient-soft: linear-gradient(135deg, #a8e6cf 0%, #ffe5e5 100%);
   --kai-gradient-glow: linear-gradient(135deg, #2ec4b6 0%, #ff6b81 50%, #a8e6cf 100%);
+
+  /* Enhanced KizunaAI Input Colors */
+  --kai-input-bg: #ffffff;
+  --kai-input-border: #a8e6cf;
+  --kai-input-border-focus: #2ec4b6;
+  --kai-input-border-error: #ff6b81;
+  --kai-input-shadow: rgba(46, 196, 182, 0.1);
+  --kai-input-shadow-focus: rgba(46, 196, 182, 0.2);
+  --kai-input-placeholder: #94a3b8;
+
+  /* User Interaction Colors */
+  --user-message-bg: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  --user-message-text: #ffffff;
+  --bot-message-bg: #ffffff;
+  --bot-message-border: #e2e8f0;
+  --bot-message-text: #1b2a49;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
 
   /* Typography */
   --font-ks-primary: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
@@ -254,6 +280,166 @@
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.3);
   animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Enhanced Input Styling */
+.ks-input-enhanced {
+  background: var(--ks-input-bg);
+  border: 2px solid var(--ks-input-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-ks-primary);
+  font-size: 14px;
+  color: var(--ks-text-primary);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px var(--ks-input-shadow);
+}
+
+.ks-input-enhanced:focus {
+  outline: none;
+  border-color: var(--ks-input-border-focus);
+  box-shadow: 0 0 0 3px var(--ks-input-shadow-focus);
+}
+
+.ks-input-enhanced::placeholder {
+  color: var(--ks-input-placeholder);
+}
+
+.kai-input-enhanced {
+  background: var(--kai-input-bg);
+  border: 2px solid var(--kai-input-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-kai-primary);
+  font-size: 14px;
+  color: var(--kai-text-primary);
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px var(--kai-input-shadow);
+}
+
+.kai-input-enhanced:focus {
+  outline: none;
+  border-color: var(--kai-input-border-focus);
+  box-shadow: 0 0 0 3px var(--kai-input-shadow-focus);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.kai-input-enhanced::placeholder {
+  color: var(--kai-input-placeholder);
+}
+
+/* Enhanced Message Bubbles */
+.user-message-enhanced {
+  background: var(--user-message-bg);
+  color: var(--user-message-text);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+  position: relative;
+}
+
+.user-message-enhanced::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #357abd;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+.bot-message-enhanced {
+  background: var(--bot-message-bg);
+  color: var(--bot-message-text);
+  border: 1px solid var(--bot-message-border);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+  padding: var(--spacing-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.bot-message-enhanced::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-right: 8px solid white;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+}
+
+/* Enhanced Button Styles */
+.ks-button-enhanced {
+  background: linear-gradient(135deg, var(--ks-primary) 0%, var(--ks-accent) 100%);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-ks-primary);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(27, 42, 73, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.ks-button-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(27, 42, 73, 0.4);
+}
+
+.ks-button-enhanced::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.ks-button-enhanced:hover::before {
+  left: 100%;
+}
+
+.kai-button-enhanced {
+  background: var(--kai-gradient-primary);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-full);
+  font-family: var(--font-kai-primary);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(46, 196, 182, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.kai-button-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(46, 196, 182, 0.4);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.kai-button-enhanced::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.kai-button-enhanced:hover::before {
+  left: 100%;
 }
 
 /* Chat Interface Styles */

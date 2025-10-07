@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertTriangle, CheckCircle, Clock, Phone, MessageSquare, TrendingUp, Users, Zap } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AlertTriangle, CheckCircle, Clock, MessageSquare, Phone, TrendingUp, Users, Zap } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface ComplaintData {
   id: string
@@ -327,16 +327,16 @@ export default function RealtimeComplaintsDashboard() {
                               <div className={`w-3 h-3 rounded-full ${getPriorityColor(complaint.priority)}`}></div>
                               <div>
                                 <Badge variant="outline" className="mb-1">
-                                  {complaint.businessType.toUpperCase()}
+                                  {(complaint?.businessType ?? 'general').toUpperCase()}
                                 </Badge>
-                                <p className="text-sm text-gray-600">{complaint.timestamp.toLocaleTimeString()}</p>
+                                <p className="text-sm text-gray-600">{new Date(complaint?.timestamp ?? Date.now()).toLocaleTimeString()}</p>
                               </div>
                             </div>
                             <Badge
-                              variant={complaint.status === "resolved" ? "default" : "secondary"}
-                              className={getStatusColor(complaint.status)}
+                              variant={complaint?.status === "resolved" ? "default" : "secondary"}
+                              className={getStatusColor(complaint?.status ?? 'open')}
                             >
-                              {complaint.status.replace("_", " ").toUpperCase()}
+                              {(complaint?.status ?? 'open').replace("_", " ").toUpperCase()}
                             </Badge>
                           </div>
 

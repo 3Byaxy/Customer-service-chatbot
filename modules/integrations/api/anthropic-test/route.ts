@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const result = await generateText({
-      model: anthropic('claude-3-5-sonnet-20241022'),
+      model: anthropic('claude-3-5-sonnet-20241022') as any,
       prompt: `You are a helpful customer service AI assistant. Please respond to this customer message in a friendly and professional manner: "${message}"`,
       maxTokens: 500,
     })
