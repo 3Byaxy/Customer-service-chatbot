@@ -41,7 +41,7 @@ export default function FullAppPage() {
               Full Platform Access
             </CardTitle>
             <CardDescription className="text-blue-100">
-              You're being redirected to the complete customer service platform with all features enabled.
+              You&#39;re being redirected to the complete customer service platform with all features enabled.
             </CardDescription>
           </CardHeader>
           

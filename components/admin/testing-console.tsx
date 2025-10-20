@@ -18,7 +18,8 @@ import {
   Play,
   Send,
   Settings,
-  Zap
+  Zap,
+  Globe
 } from "lucide-react"
 import { useState } from "react"
 

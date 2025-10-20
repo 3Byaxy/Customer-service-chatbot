@@ -21,6 +21,10 @@ export const API_KEYS = {
   N8N_AGENT_ID: process.env.N8N_AGENT_ID || "agent_0101k4dnacx9f3avv6fxfb2knfns",
 }
 
+export function getAPIKey(name: keyof typeof API_KEYS): string {
+  return API_KEYS[name]
+}
+
 export const isServiceAvailable = (service: string): boolean => {
   switch (service.toUpperCase()) {
     case "GEMINI":

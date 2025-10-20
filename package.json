@@ -1,16 +1,18 @@
 {
-  "name": "kyaku-shien",
+  "name": "q-chat",
   "version": "2.0.0",
   "private": true,
-  "description": "Advanced AI Customer Support System with KizunaAI",
+  "description": "Uganda's AI Shopping Concierge - One chat for everything",
   "keywords": [
     "ai",
-    "customer-support",
+    "shopping",
+    "marketplace",
     "chatbot",
     "multilingual",
     "voice-support",
-    "kyaku-shien",
-    "kizuna-ai"
+    "q-chat",
+    "uganda",
+    "ecommerce"
   ],
   "author": "KyakuShien Team",
   "scripts": {
